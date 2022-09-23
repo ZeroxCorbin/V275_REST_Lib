@@ -67,7 +67,10 @@ namespace V725_REST_lib
         public string Detect() => $"{NodeBase}/{NodeNumber}/inspection/setup/detect";
         public string Calibrate() => $"{NodeBase}/{NodeNumber}/calibrate/video?showAll=true";
 
-        public string EnhancedLogging(bool enable) => $"{NodeBase}/{NodeNumber}/labelval/enableExtendedLogging={enable}";
+
+        public string SetSendExtendedData(bool enable) => $"{NodeBase}/{NodeNumber}/labelval?sendExtendedData={enable}";
+        public string GetSendExtendedData() => $"{NodeBase}/{NodeNumber}/labelval";
+
         public string TriggerSimulator() => $"{NodeBase}/{NodeNumber}/labelval/sim";
 
         public string RepeatImage(int repeatNumber) => $"{NodeBase}/{NodeNumber}/inspection/repeat/images/{repeatNumber}?scale=1.0";

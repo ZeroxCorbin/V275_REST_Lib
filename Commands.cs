@@ -265,6 +265,31 @@ namespace V725_REST_lib
             return res;
         }
 
+        public async Task<bool> GetSendExtendedData()
+        {
+            Logger.Info("GET: {url}", URLs.GetSendExtendedData());
+
+            string result = await Connection.Get(URLs.GetSendExtendedData(), Token);
+
+            bool res;
+            if (res = CheckResults(result, true))
+            {
+                if (result == "true")
+                    return true;
+                else
+                    return false;
+            }
+            return res;
+        }
+        public async Task<bool> SetSendExtendedData(bool enable)
+        {
+            Logger.Info("PUT: {url}", URLs.SetSendExtendedData(enable));
+
+            await Connection.Put(URLs.SetSendExtendedData(enable), "", Token);
+
+            return CheckResults("", true);
+        }
+
         public async Task<bool> GetIsRunReady()
         {
             Logger.Info("GET: {url}", URLs.IsRunReady());

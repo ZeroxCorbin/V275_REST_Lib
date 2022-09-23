@@ -11,6 +11,9 @@ namespace V725_REST_lib
 {
     public class Controller
     {
+        public delegate void StateChangedDel(string state, string jobName);
+        public event StateChangedDel StateChanged;
+
         public Dictionary<int, string> MatchModes { get; } = new Dictionary<int, string>()
         {
             {0, "Standard" },
@@ -80,13 +83,17 @@ namespace V725_REST_lib
 
         private void WebSocket_Heartbeat(Events_System ev)
         {
-            string state = char.ToUpper(ev.data.state[0]) + ev.data.state.Substring(1);
+            string state;
+            if (ev != null)
+                state = char.ToUpper(ev.data.state[0]) + ev.data.state.Substring(1);
+            else
+                state = "";
 
             if (V275_State != state)
             {
                 V275_State = state;
 
-                if (V275_State != "Idle")
+                if (V275_State != "Idle" && V275_State != "")
                 {
                     new Task(async () =>
                     {
@@ -98,19 +105,27 @@ namespace V725_REST_lib
                         {
                             V275_JobName = "";
                         }
+
+                        StateChanged?.Invoke(V275_State, V275_JobName);
                     }).Start();
                 }
                 else
                 {
                     V275_JobName = "";
                 }
+
+                StateChanged?.Invoke(V275_State, V275_JobName);
             }
         }
         private void WebSocket_StateChange(Events_System ev)
         {
-            ev.data.state = ev.data.toState;
-            WebSocket_Heartbeat(ev);
-            //V275_State = char.ToUpper(ev.data.toState[0]) + ev.data.toState.Substring(1);
+            if(ev != null)
+            {
+                ev.data.state = ev.data.toState;
+                WebSocket_Heartbeat(ev);
+            }
+            else 
+                WebSocket_Heartbeat(null);
         }
 
         public async Task<bool> GetJob()
