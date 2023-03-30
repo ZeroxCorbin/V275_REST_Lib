@@ -40,7 +40,7 @@ namespace V725_REST_lib
         public Job Job { get; private set; }
         public Job.Mask Mask { get; private set; }
         
-        public Report Report { get; private set; }
+        public V725_REST_lib.Models.Reports.Report Report { get; private set; }
         public Configuration_Camera ConfigurationCamera { get; private set; }
         public DetectResponse Detected { get; private set; }
         public List<int> Available { get; private set; }
@@ -181,7 +181,7 @@ namespace V725_REST_lib
 
             bool res;
             if (res = CheckResults(result))
-                Report = JsonConvert.DeserializeObject<Report>(result);
+                Report = JsonConvert.DeserializeObject<V725_REST_lib.Models.Reports.Report>(result);
 
             return res;
         }
@@ -193,7 +193,7 @@ namespace V725_REST_lib
 
             bool res;
             if (res = CheckResults(result))
-                Report = JsonConvert.DeserializeObject<Report>(result);
+                Report = JsonConvert.DeserializeObject<V725_REST_lib.Models.Reports.Report>(result);
 
             return res;
         }

@@ -9,13 +9,13 @@ namespace V725_REST_lib.Models
 {
     public class Report_InspectSector_Blemish
     {
-            public string name { get; set; }
-            public string type { get; set; }
-            public int top { get; set; }
-            public int left { get; set; }
-            public int width { get; set; }
-            public int height { get; set; }
-            public Data data { get; set; }
+        public string name { get; set; }
+        public string type { get; set; }
+        public int top { get; set; }
+        public int left { get; set; }
+        public int width { get; set; }
+        public int height { get; set; }
+        public Data data { get; set; }
 
         public class Data
         {
