@@ -5,9 +5,9 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using V725_REST_lib.Models;
+using V275_REST_lib.Models;
 
-namespace V725_REST_lib
+namespace V275_REST_lib
 {
     public class Commands
     {

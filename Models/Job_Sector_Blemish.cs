@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace V725_REST_lib.Models
+namespace V275_REST_lib.Models
 {
     public class Job_Sector_Blemish
     {

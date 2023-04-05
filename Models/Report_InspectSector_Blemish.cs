@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace V725_REST_lib.Models
+namespace V275_REST_lib.Models
 {
     public class Report_InspectSector_Blemish
     {
