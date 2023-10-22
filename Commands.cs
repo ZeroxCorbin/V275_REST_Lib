@@ -454,6 +454,31 @@ namespace V275_REST_lib
             return CheckResults("", true);
         }
 
+        public async Task<bool> GetCameraCommand()
+        {
+            Logger.Info("GET: {url}", URLs.Command_Camera());
+
+            string result = await Connection.Get(URLs.Command_Camera(), Token);
+
+            bool res;
+            //if (res = CheckResults(result))
+            //    Detected = JsonConvert.DeserializeObject<DetectResponse>(result);
+
+            return true;
+        }
+
+        public async Task<bool> PutCameraCommand(string cmd)
+        {
+            Logger.Info("PUT: {url}", URLs.Command_Camera());
+
+            var result = await Connection.Put(URLs.Command_Camera(), cmd, Token);
+
+            bool res;
+            //if (res = CheckResults(result))
+            //    Detected = JsonConvert.DeserializeObject<DetectResponse>(result);
+
+            return true;
+        }
 
     }
 }

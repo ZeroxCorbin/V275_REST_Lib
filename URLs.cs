@@ -79,6 +79,6 @@ namespace V275_REST_lib
 
         public string Configuration_Camera() => $"{NodeBase}/{NodeNumber}/configuration/camera";
 
-
+        public string Command_Camera() => $"{NodeBase}/{NodeNumber}/camera/command";
     }
 }
