@@ -23,13 +23,22 @@ namespace V275_REST_lib
         /// System API
         /// </summary>
         private string SystemBase => $"http://{Host}:{SystemPort}/api/printinspection";
-        public string Devices() => $"{SystemBase}/devices";
+        
         public string Product() => $"{SystemBase}/product";
+        public string Devices() => $"{SystemBase}/devices";
+
+
+        
 
         /// <summary>
         /// Node API
         /// </summary>
         private string NodeBase => $"http://{Host}:{NodePort}/api/printinspection";
+
+        public string CameraConfiguration() => $"{NodeBase}/{NodeNumber}/configuration/camera";
+        public string Inspection() => $"{NodeBase}/{NodeNumber}/inspection";
+
+
         public string Login(bool monitor = false, bool temporary = false) => $"{NodeBase}/{NodeNumber}/security/login?monitor={(monitor ? "1" : "0")}&temporary={(temporary ? "1" : "0")}";
         public string Logout() => $"{NodeBase}/{NodeNumber}/security/logout";
 
@@ -77,8 +86,7 @@ namespace V275_REST_lib
 
         public string VerifySymbologies() => $"{NodeBase}/{NodeNumber}/inspection/verify/symbologies";
 
-        public string Configuration_Camera() => $"{NodeBase}/{NodeNumber}/configuration/camera";
 
-        public string Command_Camera() => $"{NodeBase}/{NodeNumber}/camera/command";
+        public string CameraCommand() => $"{NodeBase}/{NodeNumber}/camera/command";
     }
 }

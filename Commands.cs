@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using V275_REST_lib.Models;
+using V275_REST_Lib.Models;
 
 namespace V275_REST_lib
 {
@@ -34,6 +35,8 @@ namespace V275_REST_lib
         public string Status { get; private set; }
 
         public Devices Devices { get; private set; }
+        public Inspection Inspection { get; private set; }
+
         public Product Product { get; private set; }
         public GradingStandards GradingStandards { get; private set; }
         public List<Symbologies.Symbol> Symbologies { get; private set; }
@@ -84,6 +87,19 @@ namespace V275_REST_lib
             bool res;
             if (res = CheckResults(data))
                 Devices = JsonConvert.DeserializeObject<Devices>(data);
+
+            return res;
+        }
+
+        public async Task<bool> GetInspection()
+        {
+            Logger.Info("GET: {url}", URLs.Inspection());
+
+            string data = await Connection.Get(URLs.Inspection(), "");
+
+            bool res;
+            if (res = CheckResults(data))
+                Inspection = JsonConvert.DeserializeObject<Inspection>(data);
 
             return res;
         }
@@ -254,9 +270,9 @@ namespace V275_REST_lib
         }
         public async Task<bool> GetCameraConfig()
         {
-            Logger.Info("GET: {url}", URLs.Configuration_Camera());
+            Logger.Info("GET: {url}", URLs.CameraConfiguration());
 
-            string result = await Connection.Get(URLs.Configuration_Camera(), Token);
+            string result = await Connection.Get(URLs.CameraConfiguration(), Token);
 
             bool res;
             if (res = CheckResults(result))
@@ -456,9 +472,9 @@ namespace V275_REST_lib
 
         public async Task<bool> GetCameraCommand()
         {
-            Logger.Info("GET: {url}", URLs.Command_Camera());
+            Logger.Info("GET: {url}", URLs.CameraCommand());
 
-            string result = await Connection.Get(URLs.Command_Camera(), Token);
+            string result = await Connection.Get(URLs.CameraCommand(), Token);
 
             bool res;
             //if (res = CheckResults(result))
@@ -469,9 +485,9 @@ namespace V275_REST_lib
 
         public async Task<bool> PutCameraCommand(string cmd)
         {
-            Logger.Info("PUT: {url}", URLs.Command_Camera());
+            Logger.Info("PUT: {url}", URLs.CameraCommand());
 
-            var result = await Connection.Put(URLs.Command_Camera(), cmd, Token);
+            var result = await Connection.Put(URLs.CameraCommand(), cmd, Token);
 
             bool res;
             //if (res = CheckResults(result))

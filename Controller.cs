@@ -39,10 +39,6 @@ namespace V275_REST_lib
         bool LabelBegin { get; set; } = false;
         bool LabelEnd { get; set; } = false;
 
-        public string Host { get => Commands.Host; set => Commands.Host = value; }
-        public uint SystemPort { get => Commands.SystemPort; set => Commands.SystemPort = value; }
-        public uint NodeNumber { get => Commands.NodeNumber; set => Commands.NodeNumber = value; }
-
         public string Status
         {
             get { return _Status; }
@@ -50,8 +46,12 @@ namespace V275_REST_lib
         }
         private string _Status;
 
-        public Controller()
+        public Controller(string host, uint systemPort, uint nodeNumber)
         {
+            Commands.Host = host;
+            Commands.SystemPort = systemPort;
+            Commands.NodeNumber = nodeNumber;
+
             //WebSocket.SetupCapture += WebSocket_SetupCapture;
             //WebSocket.SessionStateChange += WebSocket_SessionStateChange;
             WebSocket.Heartbeat += WebSocket_Heartbeat;
@@ -61,8 +61,6 @@ namespace V275_REST_lib
             WebSocket.SetupDetect += WebSocket_SetupDetect;
             WebSocket.StateChange += WebSocket_StateChange;
         }
-
-
 
         private void WebSocket_SetupDetect(Models.Events_System ev, bool end)
         {
