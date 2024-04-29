@@ -35,9 +35,10 @@ namespace V275_REST_lib
         public delegate void SetupDetectDelegate(Events_System ev, bool end);
         public event SetupDetectDelegate SetupDetect;
 
+        public WebSocketState State => Socket?.State ?? WebSocketState.None;
+
         public async Task<bool> StartAsync(string wsUri)
             => await StartAsync(new Uri(wsUri));
-
         public async Task<bool> StartAsync(Uri wsUri)
         {
             SocketLoopTokenSource = new CancellationTokenSource();
@@ -71,6 +72,34 @@ namespace V275_REST_lib
 
                 return false;
             }
+        }
+        public async Task StopAsync()
+        {
+            Logger.Info("WS Stopping");
+
+            if (Socket == null || Socket.State != WebSocketState.Open) return;
+            // close the socket first, because ReceiveAsync leaves an invalid socket (state = aborted) when the token is cancelled
+            var timeout = new CancellationTokenSource(5000);
+            try
+            {
+                // after this, the socket state which change to CloseSent
+                await Socket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Closing", timeout.Token);
+                // now we wait for the server response, which will close the socket
+                while (Socket != null && Socket.State != WebSocketState.Closed && !timeout.Token.IsCancellationRequested) ;
+            }
+            catch (OperationCanceledException)
+            {
+                // normal upon task/token cancellation, disregard
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "WS Close Output Async Exception");
+            }
+            // whether we closed the socket or timed out, we cancel the token causing RecieveAsync to abort the socket
+            SocketLoopTokenSource.Cancel();
+            // the finally block at the end of the processing loop will dispose and null the Socket object
+
+            StateChange?.Invoke(null);
         }
 
         private void V275_API_WebSocketEvents_MessageRecieved(string message)
@@ -142,41 +171,6 @@ namespace V275_REST_lib
                 return;
             }
         }
-
-        public async Task StopAsync()
-        {
-            Logger.Info("WS Stopping");
-
-            if (Socket == null || Socket.State != WebSocketState.Open) return;
-            // close the socket first, because ReceiveAsync leaves an invalid socket (state = aborted) when the token is cancelled
-            var timeout = new CancellationTokenSource(5000);
-            try
-            {
-                // after this, the socket state which change to CloseSent
-                await Socket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Closing", timeout.Token);
-                // now we wait for the server response, which will close the socket
-                while (Socket != null && Socket.State != WebSocketState.Closed && !timeout.Token.IsCancellationRequested) ;
-            }
-            catch (OperationCanceledException)
-            {
-                // normal upon task/token cancellation, disregard
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "WS Close Output Async Exception");
-            }
-            // whether we closed the socket or timed out, we cancel the token causing RecieveAsync to abort the socket
-            SocketLoopTokenSource.Cancel();
-            // the finally block at the end of the processing loop will dispose and null the Socket object
-
-            StateChange?.Invoke(null);
-        }
-
-        public WebSocketState State
-        {
-            get => Socket?.State ?? WebSocketState.None;
-        }
-
         private async Task SocketProcessingLoopAsync()
         {
             var cancellationToken = SocketLoopTokenSource.Token;

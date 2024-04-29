@@ -34,21 +34,21 @@ namespace V275_REST_lib
         //public string Exception => Connection.IsException ? Connection.Exception.Message : Status;
         public string Status { get; private set; }
 
-        public Devices Devices { get; private set; }
-        public Inspection Inspection { get; private set; }
+        //public Devices Devices { get; private set; }
+        //public Inspection Inspection { get; private set; }
 
-        public Product Product { get; private set; }
-        public GradingStandards GradingStandards { get; private set; }
-        public List<Symbologies.Symbol> Symbologies { get; private set; }
-        public Job Job { get; private set; }
-        public Job.Mask Mask { get; private set; }
+        //public Product Product { get; private set; }
+        //public GradingStandards GradingStandards { get; private set; }
+        //public List<Symbologies.Symbol> Symbologies { get; private set; }
+        //public Job Job { get; private set; }
+        //public Job.Mask Mask { get; private set; }
         
-        public Report Report { get; private set; }
-        public Configuration_Camera ConfigurationCamera { get; private set; }
-        public DetectResponse Detected { get; private set; }
-        public List<int> Available { get; private set; }
-        public byte[] RepeatImage { get; private set; }
-        public Calibration Calibration { get; private set; }
+        //public Report Report { get; private set; }
+        //public Configuration_Camera ConfigurationCamera { get; private set; }
+        //public DetectResponse Detected { get; private set; }
+        //public List<int> Available { get; private set; }
+        //public byte[] RepeatImage { get; private set; }
+        //public Calibration Calibration { get; private set; }
 
         private bool CheckResults(string json, bool ignoreJson = false)
         {
@@ -78,207 +78,127 @@ namespace V275_REST_lib
             return string.IsNullOrEmpty(Status);
         }
 
-        public async Task<bool> GetDevices()
+        public async Task<Devices> GetDevices()
         {
             Logger.Info("GET: {url}", URLs.Devices());
-
             string data = await Connection.Get(URLs.Devices(), "");
-
-            bool res;
-            if (res = CheckResults(data))
-                Devices = JsonConvert.DeserializeObject<Devices>(data);
-
-            return res;
+            return CheckResults(data) ? JsonConvert.DeserializeObject<Devices>(data) : null;
         }
 
-        public async Task<bool> GetInspection()
+        public async Task<Inspection> GetInspection()
         {
             Logger.Info("GET: {url}", URLs.Inspection());
-
             string data = await Connection.Get(URLs.Inspection(), "");
-
-            bool res;
-            if (res = CheckResults(data))
-                Inspection = JsonConvert.DeserializeObject<Inspection>(data);
-
-            return res;
+            return CheckResults(data) ? JsonConvert.DeserializeObject<Inspection>(data) : null;
         }
 
-        public async Task<bool> GetProduct()
+        public async Task<Product> GetProduct()
         {
             Logger.Info("GET: {url}", URLs.Product());
-
             string data = await Connection.Get(URLs.Product(), "");
-
-            bool res;
-            if (res = CheckResults(data))
-                Product = JsonConvert.DeserializeObject<Product>(data);
-            else
-                Product = null;
-
-            return res;
+            return CheckResults(data) ? JsonConvert.DeserializeObject<Product>(data) : null;
         }
 
         public async Task<bool> Login(string user, string pass, bool monitor, bool temporary = false)
         {
             Logger.Info("LOGIN {user}: {url}", user, URLs.Login(monitor, temporary));
-
             Token = await Connection.Get_Token(URLs.Login(monitor, temporary), user, pass);
-
-            return CheckResults(Token, true); ;
+            return CheckResults(Token, true);
         }
         public async Task<bool> Logout()
         {
             Logger.Info("LOGOUT: {url}", URLs.Logout());
-
-            await Connection.Put(URLs.Logout(), "", Token);
-
+            _ = await Connection.Put(URLs.Logout(), "", Token);
             return CheckResults("", true);
         }
 
-        public async Task<bool> GetGradingStandards()
+        public async Task<GradingStandards> GetGradingStandards()
         {
             Logger.Info("GET: {url}", URLs.GradingStandards());
-
             string result = await Connection.Get(URLs.GradingStandards(), Token);
-
-            bool res;
-            if (res = CheckResults(result))
-                GradingStandards = JsonConvert.DeserializeObject<GradingStandards>(result);
-
-            return res;
+            return CheckResults(result) ? JsonConvert.DeserializeObject<GradingStandards>(result) : null;
         }
-        public async Task<bool> GetSymbologies()
+        public async Task<List<Symbologies.Symbol>> GetSymbologies()
         {
             Logger.Info("GET: {url}", URLs.VerifySymbologies());
-
             string result = await Connection.Get(URLs.VerifySymbologies(), Token);
-
-            bool res;
-            if (res = CheckResults(result))
-                Symbologies = JsonConvert.DeserializeObject<List<Symbologies.Symbol>>(result);
-
-            return res;
+            return CheckResults(result) ? JsonConvert.DeserializeObject<List<Symbologies.Symbol>>(result) : null;
         }
-        public async Task<bool> GetJob()
+        public async Task<Job> GetJob()
         {
             Logger.Info("GET: {url}", URLs.Job());
 
             string result = await Connection.Get(URLs.Job(), Token);
 
-            bool res;
-            if (res = CheckResults(result))
-            {
-                Job = JsonConvert.DeserializeObject<Job>(result);
-            }
-                
-
-            return res;
+            return CheckResults(result) ? JsonConvert.DeserializeObject<Job>(result) : null;
         }
 
-        public async Task<bool> GetMask(string sectorName)
+        public async Task<Job.Mask> GetMask(string sectorName)
         {
             Logger.Info("GET: {url}", URLs.Mask(sectorName));
 
             string result = await Connection.Get(URLs.Mask(sectorName), Token);
 
-            bool res;
-            if (res = CheckResults(result))
-                Mask = JsonConvert.DeserializeObject<Job.Mask>(result);
-
-            return res;
+            return CheckResults(result) ? JsonConvert.DeserializeObject<Job.Mask>(result) : null;
         }
 
-        public async Task<bool> GetReport()
+        public async Task<Report> GetReport()
         {
             Logger.Info("GET: {url}", URLs.Report());
 
             string result = await Connection.Get(URLs.Report(), Token);
 
-            bool res;
-            if (res = CheckResults(result))
-                Report = JsonConvert.DeserializeObject<Report>(result);
-
-            return res;
+            return CheckResults(result) ? JsonConvert.DeserializeObject<Report>(result) : null;
         }
-        public async Task<bool> GetReport(int repeat)
+        public async Task<Report> GetReport(int repeat)
         {
             Logger.Info("GET: {url}", URLs.Report(repeat));
 
             string result = await Connection.Get(URLs.Report(repeat), Token);
 
-            bool res;
-            if (res = CheckResults(result))
-                Report = JsonConvert.DeserializeObject<Report>(result);
-
-            return res;
+            return CheckResults(result) ? JsonConvert.DeserializeObject<Report>(result) : null;
         }
-        public async Task<bool> GetCalibration()
+        public async Task<Calibration> GetCalibration()
         {
             Logger.Info("GET: {url}", URLs.Calibrate());
 
             string result = await Connection.Get(URLs.Calibrate(), Token);
 
-            bool res;
-            if (res = CheckResults(result))
-                Calibration = JsonConvert.DeserializeObject<Calibration>(result);
-
-            return res;
+            return CheckResults(result) ? JsonConvert.DeserializeObject<Calibration>(result) : null;
         }
 
-        public async Task<bool> GetRepeatsAvailable()
+        public async Task<List<int>> GetRepeatsAvailable()
         {
             Logger.Info("GET: {url}", URLs.Available());
 
             string result = await Connection.Get(URLs.Available(), Token);
 
-            bool res;
-            if (res = CheckResults(result))
-                Available = JsonConvert.DeserializeObject<int[]>(result).ToList();
-            else
-                Available = null;
-
-            return res;
+            return CheckResults(result) ? JsonConvert.DeserializeObject<int[]>(result).ToList() : null;
         }
-        public async Task<bool> GetRepeatsAvailableRun()
+        public async Task<List<int>> GetRepeatsAvailableRun()
         {
             Logger.Info("GET: {url}", URLs.Available());
 
             string result = await Connection.Get(URLs.AvailableRun(), Token);
 
-            bool res;
-            if (res = CheckResults(result))
-                Available = JsonConvert.DeserializeObject<int[]>(result).ToList();
-            else
-                Available = null;
-
-            return res;
+            return CheckResults(result) ? JsonConvert.DeserializeObject<int[]>(result).ToList() : null;
         }
 
-        public async Task<bool> GetRepeatsImage(int repeat)
+        public async Task<byte[]> GetRepeatsImage(int repeat)
         {
             Logger.Info("GET: {url}", URLs.RepeatImage(repeat));
 
             var result = await Connection.GetBytes(URLs.RepeatImage(repeat), Token);
 
-            RepeatImage = null;
-            bool res;
-            if (res = CheckResults("", true))
-                RepeatImage = result;
-
-            return res;
+            return CheckResults("", true) ? result : null;
         }
-        public async Task<bool> GetCameraConfig()
+        public async Task<Configuration_Camera> GetCameraConfig()
         {
             Logger.Info("GET: {url}", URLs.CameraConfiguration());
 
             string result = await Connection.Get(URLs.CameraConfiguration(), Token);
 
-            bool res;
-            if (res = CheckResults(result))
-                ConfigurationCamera = JsonConvert.DeserializeObject<Configuration_Camera>(result);
-
-            return res;
+            return CheckResults(result) ? JsonConvert.DeserializeObject<Configuration_Camera>(result) : null;
         }
 
         public async Task<bool> GetSendExtendedData()
@@ -287,21 +207,13 @@ namespace V275_REST_lib
 
             string result = await Connection.Get(URLs.GetSendExtendedData(), Token);
 
-            bool res;
-            if (res = CheckResults(result, true))
-            {
-                if (result == "true")
-                    return true;
-                else
-                    return false;
-            }
-            return res;
+            return CheckResults(result, true) && result == "true";
         }
         public async Task<bool> SetSendExtendedData(bool enable)
         {
             Logger.Info("PUT: {url}", URLs.SetSendExtendedData(enable));
 
-            await Connection.Put(URLs.SetSendExtendedData(enable), "", Token);
+            _ = await Connection.Put(URLs.SetSendExtendedData(enable), "", Token);
 
             return CheckResults("", true);
         }
@@ -312,21 +224,13 @@ namespace V275_REST_lib
 
             string result = await Connection.Get(URLs.IsRunReady(), Token);
 
-            bool res;
-            if (res = CheckResults(result, true))
-            {
-                if (result == "OK")
-                    return res;
-                else
-                    return false;
-            }
-            return res;
+            return CheckResults(result, true) && result == "OK";
         }
         public async Task<bool> RunJob(string jobName)
         {
             Logger.Info("PUT: {url}", URLs.RunJob(jobName));
 
-            await Connection.Put(URLs.RunJob(jobName), "", Token);
+            _ = await Connection.Put(URLs.RunJob(jobName), "", Token);
 
             return CheckResults("", true);
         }
@@ -334,7 +238,7 @@ namespace V275_REST_lib
         {
             Logger.Info("PUT: {url}", URLs.StartJob());
 
-            await Connection.Put(URLs.StartJob(), "", Token);
+            _ = await Connection.Put(URLs.StartJob(), "", Token);
 
             return CheckResults("", true);
         }
@@ -342,7 +246,7 @@ namespace V275_REST_lib
         {
             Logger.Info("PUT: {url}", URLs.ResumeJob());
 
-            await Connection.Put(URLs.ResumeJob(), "", Token);
+            _ = await Connection.Put(URLs.ResumeJob(), "", Token);
 
             return CheckResults("", true);
         }
@@ -350,7 +254,7 @@ namespace V275_REST_lib
         {
             Logger.Info("PUT: {url}", URLs.StopJob());
 
-            await Connection.Put(URLs.StopJob(), "", Token);
+            _ = await Connection.Put(URLs.StopJob(), "", Token);
 
             return CheckResults("", true);
         }
@@ -358,7 +262,7 @@ namespace V275_REST_lib
         {
             Logger.Info("PUT: {url}", URLs.PauseJob());
 
-            await Connection.Put(URLs.PauseJob(), "", Token);
+            _ = await Connection.Put(URLs.PauseJob(), "", Token);
 
             return CheckResults("", true);
         }
@@ -393,7 +297,7 @@ namespace V275_REST_lib
         {
             Logger.Info("PUT: {url}", URLs.Inspect());
 
-            await Connection.Put(URLs.Inspect(), "", Token);
+            _ = await Connection.Put(URLs.Inspect(), "", Token);
 
             return CheckResults("", true);
         }
@@ -401,27 +305,23 @@ namespace V275_REST_lib
         {
             Logger.Info("PUT: {url}", URLs.Detect());
 
-            await Connection.Put(URLs.Detect(), "", Token);
+            _ = await Connection.Put(URLs.Detect(), "", Token);
 
             return CheckResults("", true);
         }
-        public async Task<bool> GetDetect()
+        public async Task<DetectResponse> GetDetect()
         {
             Logger.Info("GET: {url}", URLs.Detect());
 
             string result = await Connection.Get(URLs.Detect(), Token);
 
-            bool res;
-            if (res = CheckResults(result))
-                Detected = JsonConvert.DeserializeObject<DetectResponse>(result);
-
-            return res;
+            return CheckResults(result) ? JsonConvert.DeserializeObject<DetectResponse>(result) : null;
         }
         public async Task<bool> RemoveRepeat(int repeat)
         {
             Logger.Info("PUT: {url}", URLs.Remove(repeat));
 
-            await Connection.Put(URLs.Remove(repeat), "", Token);
+            _ = await Connection.Put(URLs.Remove(repeat), "", Token);
 
             return CheckResults("", true);
         }
@@ -438,7 +338,7 @@ namespace V275_REST_lib
         {
             Logger.Info("PUT: {url}", URLs.TriggerSimulator());
 
-            await Connection.Put(URLs.TriggerSimulator(), "", Token);
+            _ = await Connection.Put(URLs.TriggerSimulator(), "", Token);
 
             return CheckResults("", true);
         }
@@ -447,7 +347,7 @@ namespace V275_REST_lib
         {
             Logger.Info("PUT: {url}", URLs.StartSimulation());
 
-            await Connection.Put(URLs.StartSimulation(), "", Token);
+            _ = await Connection.Put(URLs.StartSimulation(), "", Token);
 
             return CheckResults("", true);
         }
@@ -456,7 +356,7 @@ namespace V275_REST_lib
         {
             Logger.Info("PUT: {url}", URLs.StopSimulation());
 
-            await Connection.Put(URLs.StopSimulation(), "", Token);
+            _ = await Connection.Put(URLs.StopSimulation(), "", Token);
 
             return CheckResults("", true);
         }
@@ -465,7 +365,7 @@ namespace V275_REST_lib
         {
             Logger.Info("PUT: {url}", URLs.History(repeat.ToString()));
 
-            await Connection.Put(URLs.History(repeat.ToString()), "", Token);
+            _ = await Connection.Put(URLs.History(repeat.ToString()), "", Token);
 
             return CheckResults("", true);
         }

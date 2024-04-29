@@ -95,15 +95,8 @@ namespace V275_REST_lib
                 {
                     new Task(async () =>
                     {
-                        if (await Commands.GetJob())
-                        {
-                            V275_JobName = Commands.Job.name;
-                        }
-                        else
-                        {
-                            V275_JobName = "";
-                        }
-
+                        Job job;
+                        V275_JobName = (job = await Commands.GetJob()) != null ? job.name : "";
                         StateChanged?.Invoke(V275_State, V275_JobName);
                     }).Start();
                 }
@@ -117,36 +110,38 @@ namespace V275_REST_lib
         }
         private void WebSocket_StateChange(Events_System ev)
         {
-            if(ev != null)
+            if (ev != null)
             {
                 ev.data.state = ev.data.toState;
                 WebSocket_Heartbeat(ev);
             }
-            else 
+            else
                 WebSocket_Heartbeat(null);
         }
 
-        public async Task<bool> GetJob()
+        public async Task<Job> GetJob()
         {
-            if (!await Commands.GetJob())
+            Job job;
+            if ((job = await Commands.GetJob()) == null)
             {
                 Status = Commands.Status;
-                return false;
+                return null;
             }
 
-            foreach(var sector in Commands.Job.sectors)
+            foreach (var sector in job.sectors)
             {
-                if(sector.type == "blemish")
+                if (sector.type == "blemish")
                 {
-                    if (!await Commands.GetMask(sector.name))
+                    Job.Mask mask;
+                    if ((mask = await Commands.GetMask(sector.name)) == null)
                     {
                         Status = Commands.Status;
-                        return false;
+                        return null;
                     }
-                    sector.blemishMask = Commands.Mask;
+                    sector.blemishMask = mask;
                 }
             }
-            return true;
+            return job;
         }
 
         public async Task<bool> Inspect(int repeat)
@@ -177,47 +172,55 @@ namespace V275_REST_lib
             return LabelEnd;
         }
 
-        public async Task<bool> GetReport(int repeat, bool getImage)
+        public class FullReport
         {
+            public Report report;
+            public Job job;
+            public byte[] image;
+        }
+        public async Task<FullReport> GetReport(int repeat, bool getImage)
+        {
+            FullReport report = new FullReport();
             if (V275_State == "Editing")
             {
-                if (!await Commands.GetReport())
+                if ((report.report = await Commands.GetReport()) == null)
                 {
                     Status = Commands.Status;
-                    return false;
+                    return null;
                 }
             }
             else
             {
-                if (!await Commands.GetReport(repeat))
+                if ((report.report = await Commands.GetReport(repeat)) == null)
                 {
                     Status = Commands.Status;
-                    return false;
+                    return null;
                 }
             }
 
             if (getImage)
-                if (!await Commands.GetRepeatsImage(repeat))
+                if ((report.image = await Commands.GetRepeatsImage(repeat)) == null)
                 {
                     if (!Commands.Status.StartsWith("Gone"))
                     {
                         Status = Commands.Status;
-                        return false;
+                        return null;
                     }
                 }
 
-            return true;
+            return report;
         }
 
         public async Task<bool> DeleteSectors()
         {
-            if (!await Commands.GetJob())
+            Job job;
+            if ((job = await Commands.GetJob()) == null)
             {
                 Status = Commands.Status;
                 return false;
             }
 
-            foreach (var sec in Commands.Job.sectors)
+            foreach (var sec in job.sectors)
             {
                 if (!await Commands.DeleteSector(sec.name))
                 {
@@ -230,7 +233,7 @@ namespace V275_REST_lib
         }
         public async Task<bool> DetectSectors()
         {
-            if (!await Commands.GetDetect())
+            if (await Commands.GetDetect() == null)
             {
                 Status = Commands.Status;
                 return false;
@@ -276,7 +279,7 @@ namespace V275_REST_lib
                 return true;
         }
 
-        public List<Sector_New_Verify> CreateSectors(Events_System ev, string tableID)
+        public List<Sector_New_Verify> CreateSectors(Events_System ev, string tableID, List<Symbologies.Symbol> symbologies)
         {
             int d1 = 1;
             int d2 = 1;
@@ -299,7 +302,7 @@ namespace V275_REST_lib
                     verify.gradingStandard.tableId = "1";
                 }
 
-                Symbologies.Symbol sym = Commands.Symbologies.Find((e) => e.symbology == val.symbology);
+                Symbologies.Symbol sym = symbologies.Find((e) => e.symbology == val.symbology);
 
                 if (sym == null)
                     continue;
@@ -412,92 +415,47 @@ namespace V275_REST_lib
             return LabelBegin;
         }
 
-        private void read()
-        {
-
-
-        }
-
-        public async Task<bool> Read(int repeat,bool getImage)
+        public async Task<FullReport> Read(int repeat, bool getImage)
         {
             Status = string.Empty;
 
             if (repeat == 0)
             {
-                bool ok = false;
-                if (V275_State == "Running")
-                    ok = await Commands.GetRepeatsAvailableRun();
-                else
-                    ok = await Commands.GetRepeatsAvailable();
-
-                if (!ok)
-                {
-                    if (Commands.Available == null)
-                        repeat = 0;
-                    else
-                    {
-                        Status = Commands.Status;
-                        return false;
-                    }
-                }
-                else
-                {
-                    if (Commands.Available.Count > 0)
-                        repeat = Commands.Available.First();
-                }
-
+                var res = V275_State == "Running" ? await Commands.GetRepeatsAvailableRun() : await Commands.GetRepeatsAvailable();
+                repeat = res == null ? 0 : res.Count > 0 ? res.First() : 0;
             }
 
             if (V275_State == "Editing" && repeat != 0)
                 if (!await Inspect(repeat))
-                     return false;
+                    return null;
 
-            if (!await GetReport(repeat, getImage))
-                return false;
+            FullReport report;
+            if ((report = await GetReport(repeat, getImage)) == null)
+                return null;
 
-            if (!await GetJob())
-                return false;
+            if ((report.job = await GetJob()) == null)
+                return null;
 
             if (V275_State == "Paused")
             {
                 if (!await Commands.RemoveRepeat(repeat))
                 {
                     Status = Commands.Status;
-                    return false;
+                    return null;
                 }
 
                 if (!await Commands.ResumeJob())
                 {
                     Status = Commands.Status;
-                    return false;
+                    return null;
                 }
             }
-            return true;
+            return report;
         }
         public async Task<int> GetLatestRepeat()
         {
-            bool ok;
-            if (V275_State == "Running")
-                ok = await Commands.GetRepeatsAvailableRun();
-            else
-                ok = await Commands.GetRepeatsAvailable();
-
-            if (!ok)
-            {
-                if (Commands.Available == null)
-                    return 0;
-                else
-                {
-                    Status = Commands.Status;
-                }
-            }
-            else
-            {
-                if (Commands.Available.Count > 0)
-                    return Commands.Available.First();
-            }
-
-            return -9999;
+            var res = V275_State == "Running" ? await Commands.GetRepeatsAvailableRun() : await Commands.GetRepeatsAvailable();
+            return res == null ? 0 : res.Count > 0 ? res.First() : 0;
         }
     }
 }
