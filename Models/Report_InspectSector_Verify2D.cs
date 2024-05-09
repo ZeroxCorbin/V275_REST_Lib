@@ -43,7 +43,7 @@ namespace V275_REST_lib.Models
             public Report_InspectSector_Common.Value maximumReflectance { get; set; }
 
             public Gs1symbolquality gs1SymbolQuality { get; set; }
-            public Gs1results gs1Results { get; set; }
+            public Report_InspectSector_Common.Gs1results gs1Results { get; set; }
 
             public ModuleData extendedData { get; set; }
 
@@ -97,23 +97,6 @@ namespace V275_REST_lib.Models
             public int versionInfo { get; set; }
         }
 
-        public class Gs1results
-        {
-            public bool validated { get; set; }
-            public string input { get; set; }
-            public string formattedOut { get; set; }
-            public Fields fields { get; set; }
-            public string error { get; set; }
-        }
 
-        public class Fields
-        {
-            [JsonProperty("01")]
-            public string _01 { get; set; }
-            [JsonProperty("90")]
-            public string _90 { get; set; }
-            [JsonProperty("10")]
-            public string _10 { get; set; }
-        }
     }
 }
