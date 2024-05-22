@@ -66,6 +66,8 @@ namespace V275_REST_lib
         public string PauseJob() => $"{NodeBase}/{NodeNumber}/inspection/job/pause";
         public string StopJob() => $"{NodeBase}/{NodeNumber}/inspection/job/stop?finalizeActive=0";
 
+        public string Simulation() => $"{NodeBase}/{NodeNumber}/simulation";
+        public string TriggerSimulation(long size, int dpi) => $"{NodeBase}/{NodeNumber}/simulation/trigger?size={size}&dpi={dpi}";
         public string StartSimulation() => $"{NodeBase}/{NodeNumber}/simulation/start";
         public string StopSimulation() => $"{NodeBase}/{NodeNumber}/simulation/stop";
 
@@ -79,8 +81,6 @@ namespace V275_REST_lib
 
         public string SetSendExtendedData(bool enable) => $"{NodeBase}/{NodeNumber}/labelval?sendExtendedData={enable}";
         public string GetSendExtendedData() => $"{NodeBase}/{NodeNumber}/labelval";
-
-        public string TriggerSimulator() => $"{NodeBase}/{NodeNumber}/labelval/sim";
 
         public string RepeatImage(int repeatNumber) => $"{NodeBase}/{NodeNumber}/inspection/repeat/images/{repeatNumber}?scale=1.0";
 

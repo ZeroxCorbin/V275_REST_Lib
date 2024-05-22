@@ -8,7 +8,7 @@ namespace V275_REST_lib.Models
 {
     public class Report
     {
-       public Inspectlabel inspectLabel { get; set; }
+        public Inspectlabel inspectLabel { get; set; }
 
         public class Inspectlabel
         {

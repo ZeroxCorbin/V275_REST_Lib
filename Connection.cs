@@ -120,6 +120,34 @@ namespace V275_REST_lib
                 return false;
             }
         }
+
+        public async Task<bool> Put(string url, byte[] data, string token)
+        {
+            Reset();
+
+            try
+            {
+                using (HttpClient client = new HttpClient())
+                {
+                    client.BaseAddress = new System.Uri(url);
+                    if (!string.IsNullOrEmpty(token))
+                        client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", token);
+                    client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
+
+                    HttpContent content = new ByteArrayContent(data);
+                    HttpResponseMessage = await client.PutAsync(url, content);
+
+                    return HttpResponseMessage.IsSuccessStatusCode;
+                }
+            }
+            catch (Exception ex)
+            {
+                Exception = ex;
+                IsException = true;
+                return false;
+            }
+        }
+
         public async Task<bool> Patch(string url, string data, string token)
         {
             Reset();

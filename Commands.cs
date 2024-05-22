@@ -334,11 +334,29 @@ namespace V275_REST_lib
             return CheckResults("", true);
         }
 
-        public async Task<bool> TriggerSimulator()
-        {
-            Logger.Info("PUT: {url}", URLs.TriggerSimulator());
 
-            _ = await Connection.Put(URLs.TriggerSimulator(), "", Token);
+        public async Task<Simulation> GetSimulation()
+        {
+            Logger.Info("GET: {url}", URLs.Simulation());
+
+            string result = await Connection.Get(URLs.Simulation(), Token);
+
+            return CheckResults(result) ? JsonConvert.DeserializeObject<Simulation>(result) : null;
+        }
+        public async Task<bool> PutSimulation(Simulation simulation)
+        {
+            Logger.Info("PUT: {url}", URLs.Simulation());
+
+            _ = await Connection.Put(URLs.Simulation(), JsonConvert.SerializeObject(simulation), Token);
+
+            return CheckResults("", true);
+        }
+
+        public async Task<bool> TriggerSimulator(SimulationTrigger simulationTrigger)
+        {
+            Logger.Info("PUT: {url}", URLs.TriggerSimulation(simulationTrigger.size, simulationTrigger.dpi));
+
+            _ = await Connection.Put(URLs.TriggerSimulation(simulationTrigger.size, simulationTrigger.dpi), simulationTrigger.image, Token);
 
             return CheckResults("", true);
         }
