@@ -124,6 +124,15 @@ namespace V275_REST_lib
             string result = await Connection.Get(URLs.VerifySymbologies(), Token);
             return CheckResults(result) ? JsonConvert.DeserializeObject<List<Symbologies.Symbol>>(result) : null;
         }
+
+        public async Task<Jobs> GetJobs()
+        {
+            Logger.Info("GET: {url}", URLs.Jobs());
+
+            string result = await Connection.Get(URLs.Jobs(), Token);
+
+            return CheckResults(result) ? JsonConvert.DeserializeObject<Jobs>(result) : null;
+        }
         public async Task<Job> GetJob()
         {
             Logger.Info("GET: {url}", URLs.Job());
@@ -234,6 +243,7 @@ namespace V275_REST_lib
 
             return CheckResults("", true);
         }
+
         public async Task<bool> StartJob()
         {
             Logger.Info("PUT: {url}", URLs.StartJob());
@@ -263,6 +273,22 @@ namespace V275_REST_lib
             Logger.Info("PUT: {url}", URLs.PauseJob());
 
             _ = await Connection.Put(URLs.PauseJob(), "", Token);
+
+            return CheckResults("", true);
+        }
+        public async Task<bool> UnloadJob()
+        {
+            Logger.Info("PUT: {url}", URLs.UnloadJob());
+
+            _ = await Connection.Put(URLs.UnloadJob(), "", Token);
+
+            return CheckResults("", true);
+        }
+        public async Task<bool> LoadJob(string name)
+        {
+            Logger.Info("PUT: {url}", URLs.LoadJob());
+
+            _ = await Connection.Put(URLs.LoadJob(), $"design/{name}", Token);
 
             return CheckResults("", true);
         }

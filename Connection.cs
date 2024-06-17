@@ -107,7 +107,12 @@ namespace V275_REST_lib
                         client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", token);
                     client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
 
-                    HttpContent content = new StringContent(data, UTF8Encoding.UTF8, "*/*");
+                    //This sets Content-Type: text/plain; charset=utf-8
+                    HttpContent content = new StringContent(data);
+
+                    //This is required for the server to accept the data as plain text
+                    //This sets Content-Type: text/plain
+                    content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/plain");
                     HttpResponseMessage = await client.PutAsync(url, content);
 
                     return HttpResponseMessage.IsSuccessStatusCode;

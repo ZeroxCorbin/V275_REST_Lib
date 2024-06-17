@@ -61,9 +61,12 @@ namespace V275_REST_lib
 
         public string IsRunReady() => $"{NodeBase}/{NodeNumber}/inspection/job/isrunready";
         public string RunJob(string jobName) => $"{NodeBase}/{NodeNumber}/repository/jobs/design/{jobName}?source=inspection";
+        public string Jobs() => $"{NodeBase}/{NodeNumber}/repository/jobs/design/";
         public string StartJob() => $"{NodeBase}/{NodeNumber}/inspection/job/start";
         public string ResumeJob() => $"{NodeBase}/{NodeNumber}/inspection/job/resume";
         public string PauseJob() => $"{NodeBase}/{NodeNumber}/inspection/job/pause";
+        public string UnloadJob() => $"{NodeBase}/{NodeNumber}/inspection/job/unload";
+        public string LoadJob() => $"{NodeBase}/{NodeNumber}/inspection/job/load";
         public string StopJob() => $"{NodeBase}/{NodeNumber}/inspection/job/stop?finalizeActive=0";
 
         public string Simulation() => $"{NodeBase}/{NodeNumber}/simulation";
