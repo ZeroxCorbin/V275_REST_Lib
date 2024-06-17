@@ -71,6 +71,8 @@ namespace V275_REST_lib
 
         public string Simulation() => $"{NodeBase}/{NodeNumber}/simulation";
         public string TriggerSimulation(long size, int dpi) => $"{NodeBase}/{NodeNumber}/simulation/trigger?size={size}&dpi={dpi}";
+        public string TriggerSimulation() => $"{NodeBase}/{NodeNumber}/labelval/sim";
+
         public string StartSimulation() => $"{NodeBase}/{NodeNumber}/simulation/start";
         public string StopSimulation() => $"{NodeBase}/{NodeNumber}/simulation/stop";
 

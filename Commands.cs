@@ -387,6 +387,15 @@ namespace V275_REST_lib
             return CheckResults("", true);
         }
 
+        public async Task<bool> TriggerSimulator()
+        {
+            Logger.Info("PUT: {url}", URLs.TriggerSimulation());
+
+            _ = await Connection.Put(URLs.TriggerSimulation(), "", Token);
+
+            return CheckResults("", true);
+        }
+
         public async Task<bool> SimulatorStart()
         {
             Logger.Info("PUT: {url}", URLs.StartSimulation());
