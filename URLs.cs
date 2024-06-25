@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -51,7 +52,7 @@ namespace V275_REST_lib
         public string Mask(string sectorName) => $"{NodeBase}/{NodeNumber}/inspection/job/sectors/{sectorName}/goldenImage/mask";
 
         public string Print() => $"{NodeBase}/{NodeNumber}/inspection/print";
-        public string Print_Body(bool enabled) => $"{{\"enabled\":{(enabled ? "true" : "false")}}}";
+        public string Print_Body(bool enabled) => JsonConvert.SerializeObject(new Models.Print() { enabled = enabled, state = enabled, _override = false });
 
         public string History(string repeatNumber) => $"{NodeBase}/{NodeNumber}/inspection/setup/image?source=history&repeat={repeatNumber}";
         public string History() => $"{NodeBase}/{NodeNumber}/inspection/setup/image/history";

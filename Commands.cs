@@ -351,11 +351,21 @@ namespace V275_REST_lib
 
             return CheckResults("", true);
         }
-        public async Task<bool> Print(bool start)
+
+        public async Task<Print> GetPrint()
+        {
+            Logger.Info("GET: {url}", URLs.Print());
+
+            string result = await Connection.Get(URLs.Print(), Token);
+
+            return CheckResults(result) ? JsonConvert.DeserializeObject<Print>(result) : null;
+        }
+
+        public async Task<bool> Print(bool enabled)
         {
             Logger.Info("PUT: {url}", URLs.Print());
 
-            await Connection.Put(URLs.Print(), URLs.Print_Body(start), Token);
+            await Connection.Put(URLs.Print(), URLs.Print_Body(enabled), Token);
 
             return CheckResults("", true);
         }
