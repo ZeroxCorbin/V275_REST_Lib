@@ -11,7 +11,7 @@ namespace V275_REST_lib
 {
     public class Controller
     {
-        public delegate void StateChangedDel(string state, string jobName);
+        public delegate void StateChangedDel(string state, string? jobName);
         public event StateChangedDel StateChanged;
 
         public Dictionary<int, string> MatchModes { get; } = new Dictionary<int, string>()
@@ -39,12 +39,12 @@ namespace V275_REST_lib
         bool LabelBegin { get; set; } = false;
         bool LabelEnd { get; set; } = false;
 
-        public string Status
+        public string? Status
         {
             get { return _Status; }
             set { _Status = value; }
         }
-        private string _Status;
+        private string? _Status;
 
         public Controller(string host, uint systemPort, uint nodeNumber)
         {
@@ -79,7 +79,7 @@ namespace V275_REST_lib
             LabelEnd = true;
         }
 
-        private void WebSocket_Heartbeat(Events_System ev)
+        private void WebSocket_Heartbeat(Events_System? ev)
         {
             string state;
             if (ev != null)
@@ -112,6 +112,12 @@ namespace V275_REST_lib
         {
             if (ev != null)
             {
+                if (ev.data == null)
+                {
+                    WebSocket_Heartbeat(null);
+                    return;
+                }
+
                 ev.data.state = ev.data.toState;
                 WebSocket_Heartbeat(ev);
             }
@@ -174,9 +180,9 @@ namespace V275_REST_lib
 
         public class FullReport
         {
-            public Report report;
-            public Job job;
-            public byte[] image;
+            public Report? report;
+            public Job? job;
+            public byte[]? image;
         }
         public async Task<FullReport> GetReport(int repeat, bool getImage)
         {
@@ -281,51 +287,49 @@ namespace V275_REST_lib
 
         public List<Sector_New_Verify> CreateSectors(Events_System ev, string tableID, List<Symbologies.Symbol> symbologies)
         {
-            int d1 = 1;
-            int d2 = 1;
-
+            int d1 = 1, d2 = 1;
             List<Sector_New_Verify> lst = new List<Sector_New_Verify>();
 
+            if (ev.data != null && ev.data.detections != null)
+                foreach (var val in ev.data.detections)
+                {  
+                    if (val.region == null)
+                        continue;
 
-            foreach (var val in ev.data.detections)
-            {
-                Sector_New_Verify verify = new Sector_New_Verify();
+                    Symbologies.Symbol sym = symbologies.Find((e) => e.symbology == val.symbology);
 
-                if (!string.IsNullOrEmpty(tableID))
-                {
-                    verify.gradingStandard.enabled = true;
-                    verify.gradingStandard.tableId = tableID;
+                    if (sym == null)
+                        continue;
+
+                    Sector_New_Verify verify = new Sector_New_Verify();
+
+                    if (!string.IsNullOrEmpty(tableID))
+                    {
+                        verify.gradingStandard.enabled = true;
+                        verify.gradingStandard.tableId = tableID;
+                    }
+                    else
+                    {
+                        verify.gradingStandard.enabled = false;
+                        verify.gradingStandard.tableId = "1";
+                    }
+
+                    verify.id = sym.regionType == "verify1D" ? d1++ : d2++;
+
+                    verify.type = sym.regionType;
+                    verify.symbology = val.symbology;
+                    verify.name = $"{sym.regionType}_{verify.id}";
+                    verify.username = $"{char.ToUpper(verify.name[0])}{verify.name.Substring(1)}";
+
+                    verify.top = val.region.y;
+                    verify.left = val.region.x;
+                    verify.height = val.region.height;
+                    verify.width = val.region.width;
+
+                    verify.orientation = val.orientation;
+
+                    lst.Add(verify);
                 }
-                else
-                {
-                    verify.gradingStandard.enabled = false;
-                    verify.gradingStandard.tableId = "1";
-                }
-
-                Symbologies.Symbol sym = symbologies.Find((e) => e.symbology == val.symbology);
-
-                if (sym == null)
-                    continue;
-
-                if (sym.regionType == "verify1D")
-                    verify.id = d1++;
-                else
-                    verify.id = d2++;
-
-                verify.type = sym.regionType;
-                verify.symbology = val.symbology;
-                verify.name = $"{sym.regionType}_{verify.id}";
-                verify.username = $"{char.ToUpper(verify.name[0])}{verify.name.Substring(1)}";
-
-                verify.top = val.region.y;
-                verify.left = val.region.x;
-                verify.height = val.region.height;
-                verify.width = val.region.width;
-
-                verify.orientation = val.orientation;
-
-                lst.Add(verify);
-            }
 
             return lst;
         }
@@ -399,7 +403,6 @@ namespace V275_REST_lib
             if (!await Commands.SimulatorStart())
                 return false;
 
-
             LabelBegin = false;
             await Task.Run(() =>
             {
@@ -409,13 +412,10 @@ namespace V275_REST_lib
                         return;
             });
 
-            if (!await Commands.SimulatorStop())
-                return false;
-
-            return LabelBegin;
+            return await Commands.SimulatorStop() && LabelBegin;
         }
 
-        public async Task<FullReport> Read(int repeat, bool getImage)
+        public async Task<FullReport?> Read(int repeat, bool getImage)
         {
             Status = string.Empty;
 

@@ -8,7 +8,7 @@ namespace V275_REST_Lib.Models
 {
     public class SimulationTrigger
     {
-        public byte[] image { get; set; }
+        public byte[]? image { get; set; }
         public long size => image.Length;
         public int dpi { get; set; }
     }

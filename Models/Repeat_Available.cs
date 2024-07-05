@@ -11,7 +11,7 @@ namespace V275_REST_lib.Models
 
         public class Rootobject
         {
-            public int[] Property1 { get; set; }
+            public int[]? Property1 { get; set; }
         }
 
     }

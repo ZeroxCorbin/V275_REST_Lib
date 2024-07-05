@@ -17,23 +17,23 @@ namespace V275_REST_lib
     {
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
-        private ClientWebSocket Socket;
-        private CancellationTokenSource SocketLoopTokenSource;
+        private ClientWebSocket? Socket;
+        private CancellationTokenSource? SocketLoopTokenSource;
 
         public delegate void MessageRecievedDelegate(string message);
-        public event MessageRecievedDelegate MessageRecieved;
+        public event MessageRecievedDelegate? MessageRecieved;
 
         public delegate void InspectionEventDelegate(Events_System ev);
 
-        public event InspectionEventDelegate Heartbeat;
-        public event InspectionEventDelegate LabelStart;
-        public event InspectionEventDelegate LabelEnd;
-        public event InspectionEventDelegate SetupCapture;
-        public event InspectionEventDelegate SessionStateChange;
-        public event InspectionEventDelegate StateChange;
+        public event InspectionEventDelegate? Heartbeat;
+        public event InspectionEventDelegate? LabelStart;
+        public event InspectionEventDelegate? LabelEnd;
+        public event InspectionEventDelegate? SetupCapture;
+        public event InspectionEventDelegate? SessionStateChange;
+        public event InspectionEventDelegate? StateChange;
 
         public delegate void SetupDetectDelegate(Events_System ev, bool end);
-        public event SetupDetectDelegate SetupDetect;
+        public event SetupDetectDelegate? SetupDetect;
 
         public WebSocketState State => Socket?.State ?? WebSocketState.None;
 
@@ -96,7 +96,7 @@ namespace V275_REST_lib
                 Logger.Error(ex, "WS Close Output Async Exception");
             }
             // whether we closed the socket or timed out, we cancel the token causing RecieveAsync to abort the socket
-            SocketLoopTokenSource.Cancel();
+            SocketLoopTokenSource?.Cancel();
             // the finally block at the end of the processing loop will dispose and null the Socket object
 
             StateChange?.Invoke(null);
@@ -107,7 +107,10 @@ namespace V275_REST_lib
             string tmp;
             tmp = message.Remove(2, 15);
             tmp = tmp.Remove(tmp.LastIndexOf('}'), 1);
-            Events_System ev = JsonConvert.DeserializeObject<Events_System>(tmp);
+
+            Events_System ev = JsonConvert.DeserializeObject<Events_System>(tmp) ?? new Events_System();
+            if (ev.source == null)
+                return;
 
             if (ev.source == "system")
                 if (ev.name == "heartbeat")

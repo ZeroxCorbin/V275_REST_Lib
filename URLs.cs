@@ -9,7 +9,7 @@ namespace V275_REST_lib
 {
     public class URLs
     {
-        public string Host { get; set; }
+        public string? Host { get; set; }
         public uint SystemPort { get; set; }
         public uint NodeNumber { get; set; }
         private string NodePort => $"{SystemPort + NodeNumber}";

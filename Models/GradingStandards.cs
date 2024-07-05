@@ -8,21 +8,21 @@ namespace V275_REST_lib.Models
 {
     public class GradingStandards
     {
-        public GradingStandard[] gradingStandards { get; set; }
+        public GradingStandard[]? gradingStandards { get; set; }
 
 
         public class GradingStandard
         {
-            public string standard { get; set; }
-            public string tableId { get; set; }
-            public string description { get; set; }
-            public Specifications specifications { get; set; }
+            public string? standard { get; set; }
+            public string? tableId { get; set; }
+            public string? description { get; set; }
+            public Specifications? specifications { get; set; }
         }
 
         public class Specifications
         {
-            public string symbology { get; set; }
-            public string symbolType { get; set; }
+            public string? symbology { get; set; }
+            public string? symbolType { get; set; }
             public float minXdim { get; set; }
             public float maxXdim { get; set; }
             public float minHeightFactor { get; set; }

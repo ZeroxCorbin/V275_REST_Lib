@@ -8,29 +8,29 @@ namespace V275_REST_lib.Models
 {
     public class Devices
     {
-        public Node[] nodes { get; set; }
-        public Camera[] cameras { get; set; }
+        public Node[]? nodes { get; set; }
+        public Camera[]? cameras { get; set; }
 
         public class Node
         {
             public int enumeration { get; set; }
-            public string cameraMAC { get; set; }
-            public string ipAddress { get; set; }
+            public string? cameraMAC { get; set; }
+            public string? ipAddress { get; set; }
             public int port { get; set; }
             public bool connected { get; set; }
-            public string managerStatus { get; set; }
-            public string printerModel { get; set; }
+            public string? managerStatus { get; set; }
+            public string? printerModel { get; set; }
             public int packetLimiting { get; set; }
         }
 
         public class Camera
         {
-            public string type { get; set; }
-            public string gateway { get; set; }
-            public string mac { get; set; }
-            public string ip { get; set; }
-            public string subnet { get; set; }
-            public string available { get; set; }
+            public string? type { get; set; }
+            public string? gateway { get; set; }
+            public string? mac { get; set; }
+            public string? ip { get; set; }
+            public string? subnet { get; set; }
+            public string? available { get; set; }
         }
 
     }

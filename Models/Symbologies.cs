@@ -10,9 +10,9 @@ namespace V275_REST_lib.Models
     {
         public class Symbol
         {
-            public string symbolType { get; set; }
-            public string symbology { get; set; }
-            public string regionType { get; set; }
+            public string? symbolType { get; set; }
+            public string? symbology { get; set; }
+            public string? regionType { get; set; }
             public bool directional { get; set; }
         }
 

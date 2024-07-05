@@ -24,9 +24,9 @@ namespace V275_REST_lib
         //}
 
         public bool IsException { get; private set; }
-        public Exception Exception { get; private set; }
+        public Exception? Exception { get; private set; }
 
-        public HttpResponseMessage HttpResponseMessage { get; private set; }
+        public HttpResponseMessage? HttpResponseMessage { get; private set; }
 
         private void Reset()
         {

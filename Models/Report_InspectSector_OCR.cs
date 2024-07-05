@@ -8,29 +8,29 @@ namespace V275_REST_lib.Models
 {
     public class Report_InspectSector_OCR
     {
-        public string name { get; set; }
-        public string type { get; set; }
+        public string? name { get; set; }
+        public string? type { get; set; }
         public int top { get; set; }
         public int left { get; set; }
         public int width { get; set; }
         public int height { get; set; }
-        public Data data { get; set; }
+        public Data? data { get; set; }
 
         public class Data
         {
-            public Report_InspectSector_Common.Alarm[] alarms { get; set; }
-            public string text { get; set; }
+            public Report_InspectSector_Common.Alarm[]? alarms { get; set; }
+            public string? text { get; set; }
             public int score { get; set; }
-            public Chardata[] charData { get; set; }
+            public Chardata[]? charData { get; set; }
         }
 
         public class Chardata
         {
-            public string id { get; set; }
+            public string? id { get; set; }
             public int match { get; set; }
             public int artifactId { get; set; }
-            public Bounds bounds { get; set; }
-            public Bestmatch[] bestMatches { get; set; }
+            public Bounds? bounds { get; set; }
+            public Bestmatch[]? bestMatches { get; set; }
         }
 
         public class Bounds
@@ -43,7 +43,7 @@ namespace V275_REST_lib.Models
 
         public class Bestmatch
         {
-            public string id { get; set; }
+            public string? id { get; set; }
             public int fontIndex { get; set; }
             public int match { get; set; }
             public int differenceArtifact { get; set; }

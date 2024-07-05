@@ -9,8 +9,8 @@ namespace V275_REST_Lib.Models
     public class Simulation
     {
 
-        public string loadPath { get; set; }
-        public string mode { get; set; }
+        public string? loadPath { get; set; }
+        public string? mode { get; set; }
         public int dwellMs { get; set; }
         public bool sectorROI { get; set; }
 

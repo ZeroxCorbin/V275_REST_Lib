@@ -11,7 +11,7 @@ namespace V275_REST_lib.Models
         public bool cancel { get; set; }
         public float rmin { get; set; }
         public float rmax { get; set; }
-        public string state { get; set; }
+        public string? state { get; set; }
         public bool videoBalanced { get; set; }
         public bool normalizationError { get; set; }
         public bool calibrationReady { get; set; }

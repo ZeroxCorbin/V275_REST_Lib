@@ -9,9 +9,9 @@ namespace V275_REST_lib.Models
     public class Job_Sector_Blemish
     {
 
-        public string name { get; set; }
-        public string username { get; set; }
-        public string type { get; set; }
+        public string? name { get; set; }
+        public string? username { get; set; }
+        public string? type { get; set; }
         public int id { get; set; }
         public int left { get; set; }
         public int top { get; set; }
@@ -24,16 +24,16 @@ namespace V275_REST_lib.Models
         public int warningPercent { get; set; }
         public int maximumIgnoreErrors { get; set; }
         public int maxThumbnailsPerSector { get; set; }
-        public string unitMeasure { get; set; }
+        public string? unitMeasure { get; set; }
         public int dilation { get; set; }
-        public Foreground foreground { get; set; }
-        public Background background { get; set; }
-        public Matrix matrix { get; set; }
-        public Diecut dieCut { get; set; }
-        public Goldenimage goldenImage { get; set; }
-        public string metaData { get; set; }
+        public Foreground? foreground { get; set; }
+        public Background? background { get; set; }
+        public Matrix? matrix { get; set; }
+        public Diecut? dieCut { get; set; }
+        public Goldenimage? goldenImage { get; set; }
+        public string? metaData { get; set; }
 
-        public Mask mask { get; set; }
+        public Mask? mask { get; set; }
 
         public class Foreground
         {
@@ -71,13 +71,13 @@ namespace V275_REST_lib.Models
         {
             public int width { get; set; }
             public int height { get; set; }
-            public State[] states { get; set; }
-            public Layer[] layers { get; set; }
+            public State[]? states { get; set; }
+            public Layer[]? layers { get; set; }
         }
 
         public class State
         {
-            public string name { get; set; }
+            public string? name { get; set; }
             public int value { get; set; }
             public int layer { get; set; }
         }
@@ -85,7 +85,7 @@ namespace V275_REST_lib.Models
         public class Layer
         {
             public int value { get; set; }
-            public int[] runLengthEncode { get; set; }
+            public int[]? runLengthEncode { get; set; }
         }
 
     }

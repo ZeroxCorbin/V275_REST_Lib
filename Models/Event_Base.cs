@@ -8,15 +8,15 @@ namespace V275_REST_lib.Models
 {
     public class Event_Base
     {
-        public Event _event { get; set; }
+        public Event? _event { get; set; }
 
         public class Event
         {
-            public string time { get; set; }
-            public string source { get; set; }
+            public string? time { get; set; }
+            public string? source { get; set; }
             public int item { get; set; }
-            public string name { get; set; }
-            public object data { get; set; }
+            public string? name { get; set; }
+            public object? data { get; set; }
         }
 
     }

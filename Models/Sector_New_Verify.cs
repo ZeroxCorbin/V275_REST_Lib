@@ -8,9 +8,9 @@ namespace V275_REST_lib.Models
 {
     public class Sector_New_Verify
     {
-        public string name { get; set; }
-        public string username { get; set; }
-        public string type { get; set; }
+        public string? name { get; set; }
+        public string? username { get; set; }
+        public string? type { get; set; }
         public int id { get; set; }
         public int left { get; set; }
         public int top { get; set; }
@@ -18,7 +18,7 @@ namespace V275_REST_lib.Models
         public int height { get; set; }
         public int angle { get; set; } = 0;
         public bool supportMatching { get; set; } = true;
-        public string symbology { get; set; }
+        public string? symbology { get; set; }
         public Matchsettings matchSettings { get; set; } = new Matchsettings();
         public Gradingstandard gradingStandard { get; set; } = new Gradingstandard();
         public float warningGrade { get; set; } = 2.5f;

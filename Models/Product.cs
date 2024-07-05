@@ -8,10 +8,10 @@ namespace V275_REST_lib.Models
 {
     public class Product
     {
-        public string name { get; set; }
-        public string part { get; set; }
-        public Version version { get; set; }
-        public string compileDate { get; set; }
+        public string? name { get; set; }
+        public string? part { get; set; }
+        public Version? version { get; set; }
+        public string? compileDate { get; set; }
 
         public class Version
         {

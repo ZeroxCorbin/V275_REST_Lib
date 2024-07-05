@@ -17,7 +17,7 @@ namespace V275_REST_lib
         private class Results
         {
             public bool OK { get; set; }
-            public string Data { get; set; }
+            public string? Data { get; set; }
         }
 
         private Connection Connection { get; set; } = new Connection();
@@ -25,14 +25,14 @@ namespace V275_REST_lib
 
         //public bool IsLoggedIn { get; set; }
         //public bool IsMonitor { get; set; }
-        public string Token { get; set; }
+        public string? Token { get; set; }
         public string Host { get => URLs.Host; set => URLs.Host = value; }
         public uint SystemPort { get => URLs.SystemPort; set => URLs.SystemPort = value; }
         public uint NodeNumber { get => URLs.NodeNumber; set => URLs.NodeNumber = value; }
 
         //public bool IsException => Connection.IsException ? true : string.IsNullOrEmpty(Status) ? true : false;
         //public string Exception => Connection.IsException ? Connection.Exception.Message : Status;
-        public string Status { get; private set; }
+        public string? Status { get; private set; }
 
         //public Devices Devices { get; private set; }
         //public Inspection Inspection { get; private set; }

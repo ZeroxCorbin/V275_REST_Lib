@@ -9,8 +9,8 @@ namespace V275_REST_lib.Models
     public class DetectResponse
     {
             public bool active { get; set; }
-            public Region region { get; set; }
-            public Detection[] detections { get; set; }
+            public Region? region { get; set; }
+            public Detection[]? detections { get; set; }
         public class Region
         {
             public int x { get; set; }
@@ -21,8 +21,8 @@ namespace V275_REST_lib.Models
 
         public class Detection
         {
-            public string symbology { get; set; }
-            public Region1 region { get; set; }
+            public string? symbology { get; set; }
+            public Region1? region { get; set; }
             public int orientation { get; set; }
         }
 
