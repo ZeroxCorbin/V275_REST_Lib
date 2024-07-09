@@ -11,7 +11,7 @@ namespace V275_REST_lib
 {
     public class Controller
     {
-        public delegate void StateChangedDel(string state, string? jobName);
+        public delegate void StateChangedDel(string state, string? jobName, int dpi);
         public event StateChangedDel StateChanged;
 
         public Dictionary<int, string> MatchModes { get; } = new Dictionary<int, string>()
@@ -32,6 +32,7 @@ namespace V275_REST_lib
 
         public string V275_State { get; set; } = "";
         public string V275_JobName { get; set; } = "";
+        public int V275_DPI { get; set; } = 0;
 
         public Events_System SetupDetectEvent { get; set; }
         private bool SetupDetectEnd { get; set; } = false;
@@ -87,6 +88,11 @@ namespace V275_REST_lib
             else
                 state = "";
 
+            if (ev != null)
+                V275_DPI = (int)ev.data.Current_dpi;
+            else
+                V275_DPI = 0;
+
             if (V275_State != state)
             {
                 V275_State = state;
@@ -97,16 +103,18 @@ namespace V275_REST_lib
                     {
                         Job job;
                         V275_JobName = (job = await Commands.GetJob()) != null ? job.name : "";
-                        StateChanged?.Invoke(V275_State, V275_JobName);
+                        StateChanged?.Invoke(V275_State, V275_JobName, V275_DPI);
                     }).Start();
+
+                    return;
                 }
                 else
                 {
                     V275_JobName = "";
                 }
-
-                StateChanged?.Invoke(V275_State, V275_JobName);
             }
+
+            StateChanged?.Invoke(V275_State, V275_JobName, V275_DPI);
         }
         private void WebSocket_StateChange(Events_System ev)
         {

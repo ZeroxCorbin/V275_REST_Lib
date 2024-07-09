@@ -71,8 +71,11 @@ namespace V275_REST_lib
         public string StopJob() => $"{NodeBase}/{NodeNumber}/inspection/job/stop?finalizeActive=0";
 
         public string Simulation() => $"{NodeBase}/{NodeNumber}/simulation";
-        public string TriggerSimulation(long size, int dpi) => $"{NodeBase}/{NodeNumber}/simulation/trigger?size={size}&dpi={dpi}";
-        public string TriggerSimulation() => $"{NodeBase}/{NodeNumber}/labelval/sim";
+
+        public string SimulationTrigger() => $"{NodeBase}/{NodeNumber}/simulation/trigger";
+        public string SimulationTriggerImage(uint dpi) => $"{NodeBase}/{NodeNumber}/simulation/triggerimage?dpi={dpi}";
+        public string SimulationTriggerImage() => $"{NodeBase}/{NodeNumber}/simulation/triggerimage";
+
 
         public string StartSimulation() => $"{NodeBase}/{NodeNumber}/simulation/start";
         public string StopSimulation() => $"{NodeBase}/{NodeNumber}/simulation/stop";

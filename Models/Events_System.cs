@@ -23,6 +23,8 @@ namespace V275_REST_lib.Models
             public string? accessLevel { get; set; }
             public string? state { get; set; }
 
+            public uint Current_dpi { get; set; }
+
             public int position { get; set; }
             public int repeat { get; set; }
             public int repeatWidth { get; set; }

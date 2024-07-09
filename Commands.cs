@@ -388,20 +388,37 @@ namespace V275_REST_lib
             return CheckResults("", true);
         }
 
-        public async Task<bool> TriggerSimulator(SimulationTrigger simulationTrigger)
+        public async Task<bool> SimulationTriggerImage(SimulationTrigger simulationTrigger)
         {
-            Logger.Info("PUT: {url}", URLs.TriggerSimulation(simulationTrigger.size, simulationTrigger.dpi));
+            Logger.Info("PUT: {url}", URLs.SimulationTriggerImage(simulationTrigger.dpi));
 
-            _ = await Connection.Put(URLs.TriggerSimulation(simulationTrigger.size, simulationTrigger.dpi), simulationTrigger.image, Token);
+            _ = await Connection.Put(URLs.SimulationTriggerImage(simulationTrigger.dpi), simulationTrigger.image, Token);
+
+            return CheckResults("", true);
+        }
+        public async Task<bool> SimulationTrigger()
+        {
+            Logger.Info("PUT: {url}", URLs.SimulationTrigger());
+
+            _ = await Connection.Put(URLs.SimulationTrigger(), "", Token);
 
             return CheckResults("", true);
         }
 
-        public async Task<bool> TriggerSimulator()
+        public async Task<int> GetDPI()
         {
-            Logger.Info("PUT: {url}", URLs.TriggerSimulation());
+            Logger.Info("GET: {url}", URLs.SimulationTriggerImage());
 
-            _ = await Connection.Put(URLs.TriggerSimulation(), "", Token);
+            string result = await Connection.Get(URLs.SimulationTriggerImage(), Token);
+
+            return CheckResults(result, true) ? int.Parse(result) : -1;
+        }
+
+        public async Task<bool> SetDPI(uint dpi)
+        {
+            Logger.Info("PUT: {url}", URLs.SimulationTriggerImage(dpi));
+
+            _ = await Connection.Put(URLs.SimulationTriggerImage(dpi), new byte[0], Token);
 
             return CheckResults("", true);
         }
