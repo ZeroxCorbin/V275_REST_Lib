@@ -298,7 +298,7 @@ namespace V275_REST_lib
             int d1 = 1, d2 = 1;
             List<Sector_New_Verify> lst = new List<Sector_New_Verify>();
 
-            if (ev.data != null && ev.data.detections != null)
+            if (ev?.data != null && ev.data.detections != null)
                 foreach (var val in ev.data.detections)
                 {  
                     if (val.region == null)
