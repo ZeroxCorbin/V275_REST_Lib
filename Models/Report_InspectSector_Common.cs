@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -78,18 +79,8 @@ namespace V275_REST_lib.Models
             public bool validated { get; set; }
             public string? input { get; set; }
             public string? formattedOut { get; set; }
-            public Fields? fields { get; set; }
+            public JToken? fields { get; set; }
             public string? error { get; set; }
-        }
-
-        public class Fields
-        {
-            [JsonProperty("01")]
-            public string? _01 { get; set; }
-            [JsonProperty("90")]
-            public string? _90 { get; set; }
-            [JsonProperty("10")]
-            public string? _10 { get; set; }
         }
 
     }
