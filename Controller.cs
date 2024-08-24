@@ -1,15 +1,13 @@
-﻿using System;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
 using V275_REST_lib.Models;
 
 namespace V275_REST_lib
 {
-    public class Controller
+    public partial class Controller : ObservableObject
     {
         public delegate void StateChangedDel(string state, string? jobName, int dpi);
         public event StateChangedDel StateChanged;
@@ -300,7 +298,7 @@ namespace V275_REST_lib
 
             if (ev?.data != null && ev.data.detections != null)
                 foreach (var val in ev.data.detections)
-                {  
+                {
                     if (val.region == null)
                         continue;
 
