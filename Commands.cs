@@ -5,476 +5,252 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using V275_REST_lib.Models;
+using V275_REST_Lib.Logging;
 using V275_REST_Lib.Models;
 
-namespace V275_REST_lib
-{
-    public class Commands
-    {
-        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
-
-        private class Results
+namespace V275_REST_Lib
+{ 
+    public class Results
         {
-            public bool OK { get; set; }
-            public string? Data { get; set; }
+            //Json and Object are OK
+            public bool OK { get; set; } = false;
+
+            public string Json { get; set; } = string.Empty;
+            public object? Object { get; set; }
+
+            public HttpResponseMessage? HttpResponseMessage { get; set; }
         }
 
-        private Connection Connection { get; set; } = new Connection();
-        public URLs URLs { get; private set; } = new URLs();
+    public class Commands
+    {
 
-        //public bool IsLoggedIn { get; set; }
-        //public bool IsMonitor { get; set; }
-        public string? Token { get; set; }
-        public string Host { get => URLs.Host; set => URLs.Host = value; }
-        public uint SystemPort { get => URLs.SystemPort; set => URLs.SystemPort = value; }
-        public uint NodeNumber { get => URLs.NodeNumber; set => URLs.NodeNumber = value; }
 
-        //public bool IsException => Connection.IsException ? true : string.IsNullOrEmpty(Status) ? true : false;
-        //public string Exception => Connection.IsException ? Connection.Exception.Message : Status;
-        public string? Status { get; private set; }
+        public Connection Connection { get; } = new Connection();
+        public URLs URLs { get; } = new URLs();
+        public string Token { get; private set; } = string.Empty;
 
-        //public Devices Devices { get; private set; }
-        //public Inspection Inspection { get; private set; }
-
-        //public Product Product { get; private set; }
-        //public GradingStandards GradingStandards { get; private set; }
-        //public List<Symbologies.Symbol> Symbologies { get; private set; }
-        //public Job Job { get; private set; }
-        //public Job.Mask Mask { get; private set; }
-        
-        //public Report Report { get; private set; }
-        //public Configuration_Camera ConfigurationCamera { get; private set; }
-        //public DetectResponse Detected { get; private set; }
-        //public List<int> Available { get; private set; }
-        //public byte[] RepeatImage { get; private set; }
-        //public Calibration Calibration { get; private set; }
-
-        private bool CheckResults(string json, bool ignoreJson = false)
+        private bool CheckResults()
         {
-            Status = "";
-
-            if (!ignoreJson)
-                if (json != null)
-                    if (!json.StartsWith("{"))
-                        if (!json.StartsWith("["))
-                        {
-                            Status = $"Return data is not JSON: \"{json}\"";
-                            Logger.Warn($"Return data is not JSON: \"{json}\"");
-                        }
+            if (Connection.IsException)
+            {
+                if (Connection.Exception != null)
+                    LogError(Connection.Exception);
+                return false;
+            }
+            else if (Connection.HttpResponseMessage != null && !Connection.HttpResponseMessage.IsSuccessStatusCode)
+            {
+                LogWarning($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
+                return false;
+            }
+            return true;
+        }
+        private Results CheckResults(byte[] data)
+        {
+            Results results = new()
+            {
+                HttpResponseMessage = Connection.HttpResponseMessage
+            };
 
             if (Connection.IsException)
             {
-                Status = Connection.Exception.Message;
-                Logger.Error(Connection.Exception);
+                if (Connection.Exception != null)
+                    LogError(Connection.Exception);
+                results.Object = data;
+                return results;
             }
-
             else if (Connection.HttpResponseMessage != null && !Connection.HttpResponseMessage.IsSuccessStatusCode)
             {
-                Status = $"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}";
-                Logger.Warn($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
+                LogWarning($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
+                results.Object = data;
+                return results;
             }
 
-            return string.IsNullOrEmpty(Status);
-        }
+            if (data != null)
+            {
+                results.OK = true;
+                results.Object = data;
+            }
 
-        public async Task<Devices> GetDevices()
+            return results;
+        }
+        private Results CheckResults(string data)
         {
-            Logger.Info("GET: {url}", URLs.Devices());
-            string data = await Connection.Get(URLs.Devices(), "");
-            return CheckResults(data) ? JsonConvert.DeserializeObject<Devices>(data) : null;
-        }
+            Results results = new()
+            {
+                HttpResponseMessage = Connection.HttpResponseMessage
+            };
 
-        public async Task<Inspection> GetInspection()
+            if (Connection.IsException)
+            {
+                if (Connection.Exception != null)
+                    LogError(Connection.Exception);
+                results.Object = data;
+                return results;
+            }
+            else if (Connection.HttpResponseMessage != null && !Connection.HttpResponseMessage.IsSuccessStatusCode)
+            {
+                LogWarning($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
+                results.Object = data;
+                return results;
+            }
+
+            if (data != null)
+            {
+                results.OK = true;
+                results.Object = data;
+            }
+
+            return results;
+        }
+        private Results CheckResults(bool data)
         {
-            Logger.Info("GET: {url}", URLs.Inspection());
-            string data = await Connection.Get(URLs.Inspection(), "");
-            return CheckResults(data) ? JsonConvert.DeserializeObject<Inspection>(data) : null;
-        }
+            Results results = new()
+            {
+                HttpResponseMessage = Connection.HttpResponseMessage
+            };
 
-        public async Task<Product> GetProduct()
+            if (Connection.IsException)
+            {
+                if (Connection.Exception != null)
+                    LogError(Connection.Exception);
+                results.Object = data;
+                return results;
+            }
+            else if (Connection.HttpResponseMessage != null && !Connection.HttpResponseMessage.IsSuccessStatusCode)
+            {
+                LogWarning($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
+                results.Object = data;
+                return results;
+            }
+
+            results.OK = data;
+            var tsk = Connection.HttpResponseMessage?.Content.ReadAsStringAsync();
+            if (tsk != null && tsk.Wait(1000))
+                results.Object = tsk.Result;
+
+            return results;
+        }
+        private Results CheckResults<T>(string json)
         {
-            Logger.Info("GET: {url}", URLs.Product());
-            string data = await Connection.Get(URLs.Product(), "");
-            return CheckResults(data) ? JsonConvert.DeserializeObject<Product>(data) : null;
+            Results results = new()
+            {
+                HttpResponseMessage = Connection.HttpResponseMessage
+            };
+
+            if (Connection.IsException)
+            {
+                if (Connection.Exception != null)
+                    LogError(Connection.Exception);
+                results.Object = json;
+                return results;
+            }
+            else if (Connection.HttpResponseMessage != null && !Connection.HttpResponseMessage.IsSuccessStatusCode)
+            {
+                LogError($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
+                results.Object = json;
+                return results;
+            }
+
+            if (!string.IsNullOrEmpty(json))
+                results.Json = json;
+            else
+                return results;
+
+            try
+            {
+                results.Object = JsonConvert.DeserializeObject<T>(results.Json);
+                results.OK = true;
+            }
+            catch (Exception ex)
+            {
+                LogError(ex);
+                results.Object = null;
+            }
+
+            return results;
         }
 
-        public async Task<bool> Login(string user, string pass, bool monitor, bool temporary = false)
+        public async Task<Results> GetDevices() => CheckResults<Models.Devices>(await Connection.Get(URLs.Devices(), string.Empty));
+        public async Task<Results> GetInspection() => CheckResults<Models.Inspection>(await Connection.Get(URLs.Inspection(), string.Empty));
+        public async Task<Results> GetProduct() => CheckResults<Models.Product>(await Connection.Get(URLs.Product(), string.Empty));
+
+        public async Task<Results> Login(string user, string pass, bool monitor, bool temporary = false)
         {
-            Logger.Info("LOGIN {user}: {url}", user, URLs.Login(monitor, temporary));
-            Token = await Connection.Get_Token(URLs.Login(monitor, temporary), user, pass);
-            return CheckResults(Token, true);
+            Results results = new()
+            {
+                Object = await Connection.Get_Token(URLs.Login(monitor, temporary), user, pass)
+            };
+            if (results.OK = CheckResults())
+            {
+                Token = (string)results.Object;
+            }
+            else
+                Token = string.Empty;
+            return results;
         }
-        public async Task<bool> Logout()
+        public async Task<Results> Logout()
         {
-            Logger.Info("LOGOUT: {url}", URLs.Logout());
-            _ = await Connection.Put(URLs.Logout(), "", Token);
-            return CheckResults("", true);
+            Results results = new()
+            {
+                OK = await Connection.Put(URLs.Logout(), string.Empty, Token)
+            };
+            Token = string.Empty;
+            return results;
         }
 
-        public async Task<GradingStandards> GetGradingStandards()
-        {
-            Logger.Info("GET: {url}", URLs.GradingStandards());
-            string result = await Connection.Get(URLs.GradingStandards(), Token);
-            return CheckResults(result) ? JsonConvert.DeserializeObject<GradingStandards>(result) : null;
-        }
-        public async Task<List<Symbologies.Symbol>> GetSymbologies()
-        {
-            Logger.Info("GET: {url}", URLs.VerifySymbologies());
-            string result = await Connection.Get(URLs.VerifySymbologies(), Token);
-            return CheckResults(result) ? JsonConvert.DeserializeObject<List<Symbologies.Symbol>>(result) : null;
-        }
-
-        public async Task<Jobs> GetJobs()
-        {
-            Logger.Info("GET: {url}", URLs.Jobs());
-
-            string result = await Connection.Get(URLs.Jobs(), Token);
-
-            return CheckResults(result) ? JsonConvert.DeserializeObject<Jobs>(result) : null;
-        }
-        public async Task<Job> GetJob()
-        {
-            Logger.Info("GET: {url}", URLs.Job());
-
-            string result = await Connection.Get(URLs.Job(), Token);
-
-            return CheckResults(result) ? JsonConvert.DeserializeObject<Job>(result) : null;
-        }
-
-        public async Task<Job.Mask> GetMask(string sectorName)
-        {
-            Logger.Info("GET: {url}", URLs.Mask(sectorName));
-
-            string result = await Connection.Get(URLs.Mask(sectorName), Token);
-
-            return CheckResults(result) ? JsonConvert.DeserializeObject<Job.Mask>(result) : null;
-        }
-
-        public async Task<Report> GetReport()
-        {
-            Logger.Info("GET: {url}", URLs.Report());
-
-            string result = await Connection.Get(URLs.Report(), Token);
-
-            return CheckResults(result) ? JsonConvert.DeserializeObject<Report>(result) : null;
-        }
-        public async Task<Report> GetReport(int repeat)
-        {
-            Logger.Info("GET: {url}", URLs.Report(repeat));
-
-            string result = await Connection.Get(URLs.Report(repeat), Token);
-
-            return CheckResults(result) ? JsonConvert.DeserializeObject<Report>(result) : null;
-        }
-        public async Task<Calibration> GetCalibration()
-        {
-            Logger.Info("GET: {url}", URLs.Calibrate());
-
-            string result = await Connection.Get(URLs.Calibrate(), Token);
-
-            return CheckResults(result) ? JsonConvert.DeserializeObject<Calibration>(result) : null;
-        }
-
-        public async Task<List<int>> GetRepeatsAvailable()
-        {
-            Logger.Info("GET: {url}", URLs.Available());
-
-            string result = await Connection.Get(URLs.Available(), Token);
-
-            return CheckResults(result) ? JsonConvert.DeserializeObject<int[]>(result).ToList() : null;
-        }
-        public async Task<List<int>> GetRepeatsAvailableRun()
-        {
-            Logger.Info("GET: {url}", URLs.Available());
-
-            string result = await Connection.Get(URLs.AvailableRun(), Token);
-
-            return CheckResults(result) ? JsonConvert.DeserializeObject<int[]>(result).ToList() : null;
-        }
-
-        public async Task<byte[]> GetRepeatsImage(int repeat)
-        {
-            Logger.Info("GET: {url}", URLs.RepeatImage(repeat));
-
-            var result = await Connection.GetBytes(URLs.RepeatImage(repeat), Token);
-
-            return CheckResults("", true) ? result : null;
-        }
-        public async Task<Configuration_Camera> GetCameraConfig()
-        {
-            Logger.Info("GET: {url}", URLs.CameraConfiguration());
-
-            string result = await Connection.Get(URLs.CameraConfiguration(), Token);
-
-            return CheckResults(result) ? JsonConvert.DeserializeObject<Configuration_Camera>(result) : null;
-        }
-
-        public async Task<bool> GetSendExtendedData()
-        {
-            Logger.Info("GET: {url}", URLs.GetSendExtendedData());
-
-            string result = await Connection.Get(URLs.GetSendExtendedData(), Token);
-
-            return CheckResults(result, true) && result == "true";
-        }
-        public async Task<bool> SetSendExtendedData(bool enable)
-        {
-            Logger.Info("PUT: {url}", URLs.SetSendExtendedData(enable));
-
-            _ = await Connection.Put(URLs.SetSendExtendedData(enable), "", Token);
-
-            return CheckResults("", true);
-        }
-
-        public async Task<bool> GetIsRunReady()
-        {
-            Logger.Info("GET: {url}", URLs.IsRunReady());
-
-            string result = await Connection.Get(URLs.IsRunReady(), Token);
-
-            return CheckResults(result, true) && result == "OK";
-        }
-        public async Task<bool> RunJob(string jobName)
-        {
-            Logger.Info("PUT: {url}", URLs.RunJob(jobName));
-
-            _ = await Connection.Put(URLs.RunJob(jobName), "", Token);
-
-            return CheckResults("", true);
-        }
-
-        public async Task<bool> StartJob()
-        {
-            Logger.Info("PUT: {url}", URLs.StartJob());
-
-            _ = await Connection.Put(URLs.StartJob(), "", Token);
-
-            return CheckResults("", true);
-        }
-        public async Task<bool> ResumeJob()
-        {
-            Logger.Info("PUT: {url}", URLs.ResumeJob());
-
-            _ = await Connection.Put(URLs.ResumeJob(), "", Token);
-
-            return CheckResults("", true);
-        }
-        public async Task<bool> StopJob()
-        {
-            Logger.Info("PUT: {url}", URLs.StopJob());
-
-            _ = await Connection.Put(URLs.StopJob(), "", Token);
-
-            return CheckResults("", true);
-        }
-        public async Task<bool> PauseJob()
-        {
-            Logger.Info("PUT: {url}", URLs.PauseJob());
-
-            _ = await Connection.Put(URLs.PauseJob(), "", Token);
-
-            return CheckResults("", true);
-        }
-        public async Task<bool> UnloadJob()
-        {
-            Logger.Info("PUT: {url}", URLs.UnloadJob());
-
-            _ = await Connection.Put(URLs.UnloadJob(), "", Token);
-
-            return CheckResults("", true);
-        }
-        public async Task<bool> LoadJob(string name)
-        {
-            Logger.Info("PUT: {url}", URLs.LoadJob());
-
-            _ = await Connection.Put(URLs.LoadJob(), $"design/{name}", Token);
-
-            return CheckResults("", true);
-        }
-
-        public async Task<bool> DeleteSector(string sectorName)
-        {
-            Logger.Info("DELETE: {url}", URLs.DeleteSector(sectorName));
-
-            _ = await Connection.Delete(URLs.DeleteSector(sectorName), Token);
-
-            return CheckResults("", true);
-        }
-        public async Task<bool> AddSector(string sectorName, string json)
-        {
-            Logger.Info("POST: {url}", URLs.AddSector(sectorName));
-
-            _ = await Connection.Post(URLs.AddSector(sectorName), json, Token);
-
-            return CheckResults("", true);
-        }
-
-        public async Task<bool> AddMask(string sectorName, string json)
-        {
-            Logger.Info("PATCH: {url}", URLs.Mask(sectorName));
-
-            _ = await Connection.Patch(URLs.Mask(sectorName), json, Token);
-
-            return CheckResults("", true);
-        }
-
-        public async Task<bool> Inspect()
-        {
-            Logger.Info("PUT: {url}", URLs.Inspect());
-
-            _ = await Connection.Put(URLs.Inspect(), "", Token);
-
-            return CheckResults("", true);
-        }
-        public async Task<bool> Detect()
-        {
-            Logger.Info("PUT: {url}", URLs.Detect());
-
-            _ = await Connection.Put(URLs.Detect(), "", Token);
-
-            return CheckResults("", true);
-        }
-        public async Task<DetectResponse> GetDetect()
-        {
-            Logger.Info("GET: {url}", URLs.Detect());
-
-            string result = await Connection.Get(URLs.Detect(), Token);
-
-            return CheckResults(result) ? JsonConvert.DeserializeObject<DetectResponse>(result) : null;
-        }
-        public async Task<bool> RemoveRepeat(int repeat)
-        {
-            Logger.Info("PUT: {url}", URLs.Remove(repeat));
-
-            _ = await Connection.Put(URLs.Remove(repeat), "", Token);
-
-            return CheckResults("", true);
-        }
-
-        public async Task<Print> GetPrint()
-        {
-            Logger.Info("GET: {url}", URLs.Print());
-
-            string result = await Connection.Get(URLs.Print(), Token);
-
-            return CheckResults(result) ? JsonConvert.DeserializeObject<Print>(result) : null;
-        }
-
-        public async Task<bool> Print(bool enabled)
-        {
-            Logger.Info("PUT: {url}", URLs.Print());
-
-            await Connection.Put(URLs.Print(), URLs.Print_Body(enabled), Token);
-
-            return CheckResults("", true);
-        }
-
-
-        public async Task<Simulation> GetSimulation()
-        {
-            Logger.Info("GET: {url}", URLs.Simulation());
-
-            string result = await Connection.Get(URLs.Simulation(), Token);
-
-            return CheckResults(result) ? JsonConvert.DeserializeObject<Simulation>(result) : null;
-        }
-        public async Task<bool> PutSimulation(Simulation simulation)
-        {
-            Logger.Info("PUT: {url}", URLs.Simulation());
-
-            _ = await Connection.Put(URLs.Simulation(), JsonConvert.SerializeObject(simulation), Token);
-
-            return CheckResults("", true);
-        }
-
-        public async Task<bool> SimulationTriggerImage(SimulationTrigger simulationTrigger)
-        {
-            Logger.Info("PUT: {url}", URLs.SimulationTriggerImage(simulationTrigger.dpi));
-
-            _ = await Connection.Put(URLs.SimulationTriggerImage(simulationTrigger.dpi), simulationTrigger.image, Token);
-
-            return CheckResults("", true);
-        }
-        public async Task<bool> SimulationTrigger()
-        {
-            Logger.Info("PUT: {url}", URLs.SimulationTrigger());
-
-            _ = await Connection.Put(URLs.SimulationTrigger(), "", Token);
-
-            return CheckResults("", true);
-        }
-
-        public async Task<int> GetDPI()
-        {
-            Logger.Info("GET: {url}", URLs.SimulationTriggerImage());
-
-            string result = await Connection.Get(URLs.SimulationTriggerImage(), Token);
-
-            return CheckResults(result, true) ? int.Parse(result) : -1;
-        }
-
-        public async Task<bool> SetDPI(uint dpi)
-        {
-            Logger.Info("PUT: {url}", URLs.SimulationTriggerImage(dpi));
-
-            _ = await Connection.Put(URLs.SimulationTriggerImage(dpi), new byte[0], Token);
-
-            return CheckResults("", true);
-        }
-
-        public async Task<bool> SimulatorStart()
-        {
-            Logger.Info("PUT: {url}", URLs.StartSimulation());
-
-            _ = await Connection.Put(URLs.StartSimulation(), "", Token);
-
-            return CheckResults("", true);
-        }
-
-        public async Task<bool> SimulatorStop()
-        {
-            Logger.Info("PUT: {url}", URLs.StopSimulation());
-
-            _ = await Connection.Put(URLs.StopSimulation(), "", Token);
-
-            return CheckResults("", true);
-        }
-
-        public async Task<bool> SetRepeat(int repeat)
-        {
-            Logger.Info("PUT: {url}", URLs.History(repeat.ToString()));
-
-            _ = await Connection.Put(URLs.History(repeat.ToString()), "", Token);
-
-            return CheckResults("", true);
-        }
-
-        public async Task<bool> GetCameraCommand()
-        {
-            Logger.Info("GET: {url}", URLs.CameraCommand());
-
-            string result = await Connection.Get(URLs.CameraCommand(), Token);
-
-            bool res;
-            //if (res = CheckResults(result))
-            //    Detected = JsonConvert.DeserializeObject<DetectResponse>(result);
-
-            return true;
-        }
-
-        public async Task<bool> PutCameraCommand(string cmd)
-        {
-            Logger.Info("PUT: {url}", URLs.CameraCommand());
-
-            var result = await Connection.Put(URLs.CameraCommand(), cmd, Token);
-
-            bool res;
-            //if (res = CheckResults(result))
-            //    Detected = JsonConvert.DeserializeObject<DetectResponse>(result);
-
-            return true;
-        }
-
+        public async Task<Results> GetGradingStandards() => CheckResults<Models.GradingStandards>(await Connection.Get(URLs.GradingStandards(), Token));
+        public async Task<Results> GetSymbologies() => CheckResults<List<Models.Symbologies.Symbol>>(await Connection.Get(URLs.VerifySymbologies(), Token));
+        public async Task<Results> GetJob() => CheckResults<Models.Job>(await Connection.Get(URLs.Job(), Token));
+        public async Task<Results> GetJobs() => CheckResults<Models.Jobs>(await Connection.Get(URLs.Jobs(), Token));
+        public async Task<Results> GetMask(string sectorName) => CheckResults<Models.Job.Mask>(await Connection.Get(URLs.Mask(sectorName), Token));
+        public async Task<Results> GetReport() => CheckResults<Models.Report>(await Connection.Get(URLs.Report(), Token));
+        public async Task<Results> GetReport(int repeat) => CheckResults<Models.Report>(await Connection.Get(URLs.Report(repeat), Token));
+        public async Task<Results> GetCalibration() => CheckResults<Models.Calibration>(await Connection.Get(URLs.Calibrate(), Token));
+        public async Task<Results> GetRepeatsAvailable() => CheckResults<List<int>>(await Connection.Get(URLs.Available(), Token));
+        public async Task<Results> GetRepeatsAvailableRun() => CheckResults<List<int>>(await Connection.Get(URLs.AvailableRun(), Token));
+        public async Task<Results> GetRepeatsImage(int repeat) => CheckResults(await Connection.GetBytes(URLs.RepeatImage(repeat), Token));
+        public async Task<Results> GetCameraConfig() => CheckResults<Models.Configuration_Camera>(await Connection.Get(URLs.CameraConfiguration(), Token));
+        public async Task<Results> GetSendExtendedData() => CheckResults(await Connection.Get(URLs.GetSendExtendedData(), Token));
+        public async Task<Results> GetIsRunReady() => CheckResults(await Connection.Get(URLs.IsRunReady(), Token));
+        public async Task<Results> GetSimulation() => CheckResults<Models.Simulation>(await Connection.Get(URLs.Simulation(), Token));
+        public async Task<Results> GetDetect() => CheckResults<DetectResponse>(await Connection.Get(URLs.Detect(), Token));
+        public async Task<Results> GetPrint() => CheckResults<Models.Print>(await Connection.Get(URLs.Print(), Token));
+        public async Task<Results> GetDPI() => CheckResults(await Connection.Get(URLs.SimulationTriggerImage(), Token));
+        public async Task<Results> GetCameraCommand() => CheckResults(await Connection.Get(URLs.CameraCommand(), Token));
+
+
+        public async Task<Results> SetSendExtendedData(bool enable) => CheckResults(await Connection.Put(URLs.SetSendExtendedData(enable), string.Empty, Token));
+        public async Task<Results> RunJob(string jobName) => CheckResults(await Connection.Put(URLs.RunJob(jobName), string.Empty, Token));
+        public async Task<Results> StartJob() => CheckResults(await Connection.Put(URLs.StartJob(), string.Empty, Token));
+        public async Task<Results> ResumeJob() => CheckResults(await Connection.Put(URLs.ResumeJob(), string.Empty, Token));
+        public async Task<Results> StopJob() => CheckResults(await Connection.Put(URLs.StopJob(), string.Empty, Token));
+        public async Task<Results> PauseJob() => CheckResults(await Connection.Put(URLs.PauseJob(), string.Empty, Token));
+        public async Task<Results> UnloadJob() => CheckResults(await Connection.Put(URLs.UnloadJob(), string.Empty, Token));
+        public async Task<Results> LoadJob(string name) => CheckResults(await Connection.Put(URLs.LoadJob(), $"design/{name}", Token));
+        public async Task<Results> DeleteSector(string sectorName) => CheckResults(await Connection.Delete(URLs.DeleteSector(sectorName), Token));
+        public async Task<Results> AddSector(string sectorName, string json) => CheckResults(await Connection.Post(URLs.AddSector(sectorName), json, Token));
+        public async Task<Results> AddMask(string sectorName, string json) => CheckResults(await Connection.Patch(URLs.Mask(sectorName), json, Token));
+        public async Task<Results> Inspect() => CheckResults(await Connection.Put(URLs.Inspect(), string.Empty, Token));
+        public async Task<Results> Detect() => CheckResults(await Connection.Put(URLs.Detect(), string.Empty, Token));
+        public async Task<Results> RemoveRepeat(int repeat) => CheckResults(await Connection.Put(URLs.Remove(repeat), string.Empty, Token));
+        public async Task<Results> Print(bool enabled) => CheckResults(await Connection.Put(URLs.Print(), URLs.Print_Body(enabled), Token));
+        public async Task<Results> PutSimulation(Simulation simulation) => CheckResults(await Connection.Put(URLs.Simulation(), JsonConvert.SerializeObject(simulation), Token));
+        public async Task<Results> SimulationTriggerImage(SimulationTrigger simulationTrigger) => CheckResults(await Connection.Put(URLs.SimulationTriggerImage(simulationTrigger.dpi), simulationTrigger.image, Token));
+        public async Task<Results> SimulationTrigger() => CheckResults(await Connection.Put(URLs.SimulationTrigger(), string.Empty, Token));
+        public async Task<Results> SetDPI(uint dpi) => CheckResults(await Connection.Put(URLs.SimulationTriggerImage(dpi), new byte[0], Token));
+        public async Task<Results> SimulatorStart() => CheckResults(await Connection.Put(URLs.StartSimulation(), string.Empty, Token));
+        public async Task<Results> SimulatorStop() => CheckResults(await Connection.Put(URLs.StopSimulation(), string.Empty, Token));
+        public async Task<Results> SetRepeat(int repeat) => CheckResults(await Connection.Put(URLs.History(repeat.ToString()), string.Empty, Token));
+        public async Task<Results> PutCameraCommand(string cmd) => CheckResults(await Connection.Put(URLs.CameraCommand(), cmd, Token));
+
+        #region Logging
+        private readonly Logger logger = new();
+        public void LogInfo(string message) => logger.LogInfo(this.GetType(), message);
+        public void LogDebug(string message) => logger.LogDebug(this.GetType(), message);
+        public void LogWarning(string message) => logger.LogInfo(this.GetType(), message);
+        public void LogError(string message) => logger.LogError(this.GetType(), message);
+        public void LogError(Exception ex) => logger.LogError(this.GetType(), ex);
+        public void LogError(string message, Exception ex) => logger.LogError(this.GetType(), message, ex);
+        #endregion
     }
 }

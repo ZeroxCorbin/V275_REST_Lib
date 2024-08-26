@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace V275_REST_lib.Models
+namespace V275_REST_Lib.Models
 {
     public class Print
     {

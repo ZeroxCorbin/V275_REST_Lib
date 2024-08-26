@@ -1,36 +1,33 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Dynamic;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using System;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using V275_REST_Lib.Logging;
 
-namespace V275_REST_lib
+namespace V275_REST_Lib
 {
-    public class Connection
+    public partial class Connection : ObservableObject
     {
-
-        //public enum Actions
-        //{
-        //    GET,
-        //    PUT,
-        //    POST,
-        //    DELETE,
-        //    STREAM
-        //}
-
-        public bool IsException { get; private set; }
-        public Exception? Exception { get; private set; }
-
-        public HttpResponseMessage? HttpResponseMessage { get; private set; }
+        [ObservableProperty] private bool isException;
+        [ObservableProperty] private Exception? exception;
+        partial void OnExceptionChanged(Exception? value)
+        {
+            if (value != null)
+            {
+                IsException = true;
+                LogError(value);
+            }
+            else
+                IsException = false;
+        }
+        [ObservableProperty] private HttpResponseMessage? httpResponseMessage;
 
         private void Reset()
         {
-            IsException = false;
             Exception = null;
             HttpResponseMessage = null;
         }
@@ -40,255 +37,240 @@ namespace V275_REST_lib
 
         public async Task<string> Get_Token(string url, string user, string pass)
         {
+            LogDebug($"GET TOKEN: {url}");
+
             Reset();
 
             try
             {
-                using (HttpClient client = new HttpClient())
-                {
-                    client.BaseAddress = new System.Uri(url);
-                    client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(UTF8Encoding.UTF8.GetBytes($"{user}:{pass}")));
-                    client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
+                using HttpClient client = new();
+                client.BaseAddress = new System.Uri(url);
+                client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(UTF8Encoding.UTF8.GetBytes($"{user}:{pass}")));
+                client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
 
-                    HttpContent content = new StringContent("", UTF8Encoding.UTF8, "*/*");
-                    HttpResponseMessage = await client.PutAsync(url, content);
+                HttpContent content = new StringContent("", UTF8Encoding.UTF8, "*/*");
+                HttpResponseMessage = await client.PutAsync(url, content);
 
-                    if (HttpResponseMessage.IsSuccessStatusCode)
-                        return HttpResponseMessage.Headers.GetValues("Authorization").FirstOrDefault();
-                    else
-                        return null;
-                }
+                return HttpResponseMessage.IsSuccessStatusCode ? HttpResponseMessage.Headers.GetValues("Authorization").FirstOrDefault() : null;
             }
             catch (Exception ex)
             {
                 Exception = ex;
-                IsException = true;
                 return null;
             }
         }
-
         public async Task<bool> Post(string url, string data, string token)
         {
+            LogDebug($"POST: {url}");
+
             Reset();
 
             try
             {
-                using (HttpClient client = new HttpClient())
-                {
-                    client.BaseAddress = new System.Uri(url);
-                    if (!string.IsNullOrEmpty(token))
-                        client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", token);
-                    client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
+                using HttpClient client = new();
+                client.BaseAddress = new System.Uri(url);
+                if (!string.IsNullOrEmpty(token))
+                    client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", token);
+                client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
 
-                    HttpContent content = new StringContent(data, UTF8Encoding.UTF8, "*/*");
-                    HttpResponseMessage = await client.PostAsync(url, content);
+                HttpContent content = new StringContent(data, UTF8Encoding.UTF8, "*/*");
+                HttpResponseMessage = await client.PostAsync(url, content);
 
-                    return HttpResponseMessage.IsSuccessStatusCode;
-                }
+                return HttpResponseMessage.IsSuccessStatusCode;
             }
             catch (Exception ex)
             {
                 Exception = ex;
-                IsException = true;
                 return false;
             }
 
         }
         public async Task<bool> Put(string url, string data, string token)
         {
+            LogDebug($"PUT: {url}");
+
             Reset();
 
             try
             {
-                using (HttpClient client = new HttpClient())
-                {
-                    client.BaseAddress = new System.Uri(url);
-                    if (!string.IsNullOrEmpty(token))
-                        client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", token);
-                    client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
+                using HttpClient client = new();
+                client.BaseAddress = new System.Uri(url);
+                if (!string.IsNullOrEmpty(token))
+                    client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", token);
+                client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
 
-                    //This sets Content-Type: text/plain; charset=utf-8
-                    HttpContent content = new StringContent(data);
+                //This sets Content-Type: text/plain; charset=utf-8
+                HttpContent content = new StringContent(data);
 
-                    //This is required for the server to accept the data as plain text
-                    //This sets Content-Type: text/plain
-                    content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/plain");
-                    HttpResponseMessage = await client.PutAsync(url, content);
+                //This is required for the server to accept the data as plain text
+                //This sets Content-Type: text/plain
+                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/plain");
+                HttpResponseMessage = await client.PutAsync(url, content);
 
-                    return HttpResponseMessage.IsSuccessStatusCode;
-                }
+                return HttpResponseMessage.IsSuccessStatusCode;
             }
             catch (Exception ex)
             {
                 Exception = ex;
-                IsException = true;
                 return false;
             }
         }
-
         public async Task<bool> Put(string url, byte[] data, string token)
         {
+            LogDebug($"PUT: {url}");
+
             Reset();
 
             try
             {
-                using (HttpClient client = new HttpClient())
-                {
-                    client.BaseAddress = new System.Uri(url);
-                    if (!string.IsNullOrEmpty(token))
-                        client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", token);
-                    client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
+                using HttpClient client = new();
+                client.BaseAddress = new System.Uri(url);
+                if (!string.IsNullOrEmpty(token))
+                    client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", token);
+                client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
 
-                    HttpContent content = new ByteArrayContent(data);
-                    HttpResponseMessage = await client.PutAsync(url, content);
+                HttpContent content = new ByteArrayContent(data);
+                HttpResponseMessage = await client.PutAsync(url, content);
 
-                    return HttpResponseMessage.IsSuccessStatusCode;
-                }
+                return HttpResponseMessage.IsSuccessStatusCode;
             }
             catch (Exception ex)
             {
                 Exception = ex;
-                IsException = true;
                 return false;
             }
         }
-
         public async Task<bool> Patch(string url, string data, string token)
         {
-            Reset();
+            LogDebug($"PATCH: {url}");
 
             try
             {
-                using (HttpClient client = new HttpClient())
-                {
-                    client.BaseAddress = new System.Uri(url);
-                    if (!string.IsNullOrEmpty(token))
-                        client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", token);
-                    client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
+                using HttpClient client = new();
+                client.BaseAddress = new System.Uri(url);
+                if (!string.IsNullOrEmpty(token))
+                    client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", token);
+                client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
 
-                    HttpContent content = new StringContent(data, UTF8Encoding.UTF8, "*/*");
-                    var request = new HttpRequestMessage(new HttpMethod("PATCH"), url)
-                    { Content = content };
+                HttpContent content = new StringContent(data, UTF8Encoding.UTF8, "*/*");
+                var request = new HttpRequestMessage(new HttpMethod("PATCH"), url)
+                { Content = content };
 
-                    HttpResponseMessage = await client.SendAsync(request);
+                HttpResponseMessage = await client.SendAsync(request);
 
-                    return HttpResponseMessage.IsSuccessStatusCode;
-                }
+                return HttpResponseMessage.IsSuccessStatusCode;
             }
             catch (Exception ex)
             {
                 Exception = ex;
-                IsException = true;
                 return false;
             }
 
         }
         public async Task<bool> Delete(string url, string token)
         {
+            LogDebug($"DELETE: {url}");
+
             Reset();
 
             try
             {
-                using (HttpClient client = new HttpClient())
-                {
-                    client.BaseAddress = new System.Uri(url);
-                    if (!string.IsNullOrEmpty(token))
-                        client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", token);
-                    client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
+                using HttpClient client = new();
+                client.BaseAddress = new System.Uri(url);
+                if (!string.IsNullOrEmpty(token))
+                    client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", token);
+                client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
 
-                    HttpResponseMessage = await client.DeleteAsync(url);
+                HttpResponseMessage = await client.DeleteAsync(url);
 
-                    return HttpResponseMessage.IsSuccessStatusCode;
-                }
+                return HttpResponseMessage.IsSuccessStatusCode;
             }
             catch (Exception ex)
             {
                 Exception = ex;
-                IsException = true;
                 return false;
             }
 
         }
         public async Task<string> Get(string url, string token)
         {
+            LogDebug($"GET: {url}");
+
             Reset();
 
             try
             {
-                using (HttpClient client = new HttpClient())
-                {
-                    client.BaseAddress = new System.Uri(url);
-                    if (!string.IsNullOrEmpty(token))
-                        client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", token);
-                    client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
+                using HttpClient client = new();
+                client.BaseAddress = new System.Uri(url);
+                if (!string.IsNullOrEmpty(token))
+                    client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", token);
+                client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
 
-                    HttpResponseMessage = await client.GetAsync(url);
+                HttpResponseMessage = await client.GetAsync(url);
 
-                    if (HttpResponseMessage.IsSuccessStatusCode)
-                        return HttpResponseMessage.Content.ReadAsStringAsync().Result;
-                    else
-                        return null;
-                }
+                return HttpResponseMessage.IsSuccessStatusCode ? HttpResponseMessage.Content.ReadAsStringAsync().Result : null;
             }
             catch (Exception ex)
             {
                 Exception = ex;
-                IsException = true;
                 return null;
             }
         }
         public async Task<byte[]> GetBytes(string url, string token)
         {
+            LogDebug($"GET: {url}");
+
             Reset();
 
             try
             {
-                using (HttpClient client = new HttpClient())
-                {
-                    client.BaseAddress = new System.Uri(url);
-                    if (!string.IsNullOrEmpty(token))
-                        client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", token);
-                    client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("image/bmp"));
+                using HttpClient client = new();
+                client.BaseAddress = new System.Uri(url);
+                if (!string.IsNullOrEmpty(token))
+                    client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", token);
+                client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("image/bmp"));
 
-                    HttpResponseMessage = await client.GetAsync(url);
+                HttpResponseMessage = await client.GetAsync(url);
 
-                    if (HttpResponseMessage.IsSuccessStatusCode)
-                        return HttpResponseMessage.Content.ReadAsByteArrayAsync().Result;
-                    else
-                        return null;
-                }
+                return HttpResponseMessage.IsSuccessStatusCode ? HttpResponseMessage.Content.ReadAsByteArrayAsync().Result : null;
             }
             catch (Exception ex)
             {
                 Exception = ex;
-                IsException = true;
                 return null;
             }
         }
-
         public async Task<Stream> Stream(string url, string token)
         {
+            LogDebug($"STREAM: {url}");
+
             Reset();
 
             try
             {
-                using (HttpClient client = new HttpClient())
-                {
-                    client.BaseAddress = new System.Uri(url);
-                    if (!string.IsNullOrEmpty(token))
-                        client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", token);
-                    client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("text/event-stream"));
+                using HttpClient client = new();
+                client.BaseAddress = new System.Uri(url);
+                if (!string.IsNullOrEmpty(token))
+                    client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", token);
+                client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("text/event-stream"));
 
-                    return await client.GetStreamAsync(url);
-                }
+                return await client.GetStreamAsync(url);
             }
             catch (Exception ex)
             {
                 Exception = ex;
-                IsException = true;
                 return null;
             }
         }
 
+        #region Logging
+        private readonly Logger logger = new();
+        public void LogInfo(string message) => logger.LogInfo(this.GetType(), message);
+        public void LogDebug(string message) => logger.LogDebug(this.GetType(), message);
+        public void LogWarning(string message) => logger.LogInfo(this.GetType(), message);
+        public void LogError(string message) => logger.LogError(this.GetType(), message);
+        public void LogError(Exception ex) => logger.LogError(this.GetType(), ex);
+        public void LogError(string message, Exception ex) => logger.LogError(this.GetType(), message, ex);
+        #endregion
     }
 }

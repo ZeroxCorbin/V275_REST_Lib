@@ -5,13 +5,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace V275_REST_lib
+namespace V275_REST_Lib
 {
     public class URLs
     {
-        public string? Host { get; set; }
-        public uint SystemPort { get; set; }
-        public uint NodeNumber { get; set; }
+        public string? Host { get; set; } = "127.0.0.1";
+        public uint SystemPort { get; set; } = 8080;
+        public uint NodeNumber { get; set; } = 0;
+
         private string NodePort => $"{SystemPort + NodeNumber}";
 
         /// <summary>
@@ -27,9 +28,6 @@ namespace V275_REST_lib
         
         public string Product() => $"{SystemBase}/product";
         public string Devices() => $"{SystemBase}/devices";
-
-
-        
 
         /// <summary>
         /// Node API

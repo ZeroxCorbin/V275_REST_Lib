@@ -2,7 +2,7 @@
 using System;
 using CommunityToolkit.Mvvm.Messaging;
 
-namespace V275_REST_lib.Logging;
+namespace V275_REST_Lib.Logging;
 
 public class Logger : ILogger
 {

@@ -1,7 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.Messaging.Messages;
 using System;
 
-namespace V275_REST_lib.Messages;
+namespace V275_REST_Lib.Messages;
 
 public enum LoggerMessageTypes
 {
