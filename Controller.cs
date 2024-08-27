@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using V275_REST_Lib.Logging;
 using V275_REST_Lib.Models;
+using static V275_REST_Lib.Models.Report_InspectSector_Common;
 
 namespace V275_REST_Lib
 {
@@ -47,7 +48,7 @@ namespace V275_REST_Lib
         [ObservableProperty][property: JsonProperty] private uint systemPort = 8080;
         partial void OnSystemPortChanged(uint value) { Commands.URLs.SystemPort = value; }
 
-        [ObservableProperty][property: JsonProperty]  private uint nodeNumber = 0;
+        [ObservableProperty][property: JsonProperty] private uint nodeNumber = 0;
         partial void OnNodeNumberChanged(uint value) { Commands.URLs.NodeNumber = value; }
 
         [ObservableProperty][property: JsonProperty] string userName = "admin";
@@ -55,7 +56,7 @@ namespace V275_REST_Lib
         [ObservableProperty][property: JsonProperty] string simulatorImageDirectory;
 
         [ObservableProperty] private NodeStates state = NodeStates.Offline;
-        [ObservableProperty] private Events_System.Data loginData = new();
+
 
         [ObservableProperty] private bool isLoggedIn_Monitor = false;
         partial void OnIsLoggedIn_MonitorChanged(bool value) { OnPropertyChanged(nameof(IsLoggedIn)); OnPropertyChanged(nameof(IsNotLoggedIn)); }
@@ -66,68 +67,79 @@ namespace V275_REST_Lib
         public bool IsLoggedIn => IsLoggedIn_Monitor || IsLoggedIn_Control;
         public bool IsNotLoggedIn => !(IsLoggedIn_Monitor || IsLoggedIn_Control);
 
+        [ObservableProperty] private Events_System.Data loginData = new();
 
-        [ObservableProperty] private Devices device;
-        partial void OnDeviceChanging(Devices value) => IsDeviceValid = value != null && value is Devices;
-        [ObservableProperty] private string deviceJSON;
-        [ObservableProperty] private bool isDeviceValid;
+        #region System API Properties
 
-        public Devices.Node Node => Device?.nodes?.FirstOrDefault((n) => n.enumeration == NodeNumber) ?? new Devices.Node();
-        public Devices.Camera Camera => Device?.cameras?.FirstOrDefault((c) => c.mac == Node.cameraMAC) ?? new Devices.Camera();
+        [ObservableProperty] private Devices? devices;
+        partial void OnDevicesChanging(Devices? value) => IsDevicesValid = value != null && value is Devices;
+        partial void OnDevicesChanged(Devices? value)
+        {
+            OnPropertyChanged(nameof(Node));
+            OnPropertyChanged(nameof(Camera));
+        }
+        [ObservableProperty] private string devicesJSON;
+        [ObservableProperty] private bool isDevicesValid;
 
-        [ObservableProperty] private Inspection inspection;
-        partial void OnInspectionChanging(Inspection value) => IsInspectionValid = value != null && value is Inspection;
-        partial void OnInspectionChanged(Inspection value)
+        public Devices.Node? Node => Devices?.nodes?.FirstOrDefault((n) => n.enumeration == NodeNumber);
+        public Devices.Camera? Camera => Devices?.cameras?.FirstOrDefault((c) => c.mac == Node.cameraMAC);
+
+        [ObservableProperty] private Product? product;
+        partial void OnProductChanging(Product? value) => IsProductValid = value != null && value is Product;
+        [ObservableProperty] private string productJSON;
+        [ObservableProperty] private bool isProductValid;
+
+        #endregion
+
+        [ObservableProperty] private Inspection? inspection;
+        partial void OnInspectionChanging(Inspection? value) => IsInspectionValid = value != null && value is Inspection;
+        partial void OnInspectionChanged(Inspection? value)
         {
             OnPropertyChanged(nameof(IsSimulator));
         }
         [ObservableProperty] private string inspectionJSON;
         [ObservableProperty] private bool isInspectionValid;
 
-        [ObservableProperty] private Jobs jobs;
-        partial void OnJobsChanging(Jobs value) => IsJobsValid = value != null && value is Jobs;
+        [ObservableProperty] private Jobs? jobs;
+        partial void OnJobsChanging(Jobs? value) => IsJobsValid = value != null && value is Jobs;
         [ObservableProperty] private string jobsJSON;
         [ObservableProperty] private bool isJobsValid;
 
-        [ObservableProperty] private Product product;
-        partial void OnProductChanging(Product value) => IsProductValid = value != null && value is Product;
-        [ObservableProperty] private string productJSON;
-        [ObservableProperty] private bool isProductValid;
 
         [ObservableProperty] private bool isOldISO;
 
-        [ObservableProperty] private Configuration_Camera configurationCamera;
-        partial void OnConfigurationCameraChanging(Configuration_Camera value) => IsConfigurationCameraValid = value != null && value is Configuration_Camera;
-        partial void OnConfigurationCameraChanged(Configuration_Camera value)
+        [ObservableProperty] private Configuration_Camera? configurationCamera;
+        partial void OnConfigurationCameraChanging(Configuration_Camera? value) => IsConfigurationCameraValid = value != null && value is Configuration_Camera;
+        partial void OnConfigurationCameraChanged(Configuration_Camera? value)
         {
             OnPropertyChanged(nameof(IsBackupVoid));
         }
         [ObservableProperty] private string configurationCameraJSON;
         [ObservableProperty] private bool isConfigurationCameraValid;
 
-        [ObservableProperty] private List<Symbologies.Symbol> symbologies;
-        partial void OnSymbologiesChanging(List<Symbologies.Symbol> value) => IsSymbologiesValid = value != null && value is List<Symbologies.Symbol>;
+        [ObservableProperty] private List<Symbologies.Symbol>? symbologies;
+        partial void OnSymbologiesChanging(List<Symbologies.Symbol>? value) => IsSymbologiesValid = value != null && value is List<Symbologies.Symbol>;
         [ObservableProperty] private string symbologiesJSON;
         [ObservableProperty] private bool isSymbologiesValid;
 
-        [ObservableProperty] private Calibration calibration;
-        partial void OnCalibrationChanging(Calibration value) => IsCalibrationValid = value != null && value is Calibration;
+        [ObservableProperty] private Calibration? calibration;
+        partial void OnCalibrationChanging(Calibration? value) => IsCalibrationValid = value != null && value is Calibration;
         [ObservableProperty] private string calibrationJSON;
         [ObservableProperty] private bool isCalibrationValid;
 
-        [ObservableProperty] private Simulation simulation;
-        partial void OnSimulationChanging(Simulation value) => IsSimulationValid = value != null && value is Simulation;
+        [ObservableProperty] private Simulation? simulation;
+        partial void OnSimulationChanging(Simulation? value) => IsSimulationValid = value != null && value is Simulation;
         [ObservableProperty] private string simulationJSON;
         [ObservableProperty] private bool isSimulationValid;
 
-        [ObservableProperty] private Print print;
-        partial void OnPrintChanging(Print value) => IsPrintValid = value != null && value is Print;
+        [ObservableProperty] private Print? print;
+        partial void OnPrintChanging(Print? value) => IsPrintValid = value != null && value is Print;
         [ObservableProperty] private string printJSON;
         [ObservableProperty] private bool isPrintValid;
 
-        [ObservableProperty] private Job job;
-        partial void OnJobChanging(Job value) => IsJobValid = value != null && value is Job;
-        partial void OnJobChanged(Job value)
+        [ObservableProperty] private Job? job;
+        partial void OnJobChanging(Job? value) => IsJobValid = value != null && value is Job;
+        partial void OnJobChanged(Job? value)
         {
             OnPropertyChanged(nameof(JobName));
         }
@@ -135,8 +147,8 @@ namespace V275_REST_Lib
         [ObservableProperty] private bool isJobValid;
 
         [ObservableProperty] private int dpi = 600;
-        partial void OnDpiChanged(int value) => Is600Dpi = value == 600;
-        [ObservableProperty] private bool is600Dpi = true;
+        partial void OnDpiChanged(int value) => OnPropertyChanged(nameof(Is600Dpi));
+        public bool Is600Dpi => Dpi == 600;
 
         public bool IsSimulator => IsInspectionValid && Inspection.device.Equals("simulator");
         public bool IsBackupVoid => IsConfigurationCameraValid && ConfigurationCamera?.backupVoidMode?.value == "ON";
@@ -148,18 +160,6 @@ namespace V275_REST_Lib
         [ObservableProperty] private bool labelBegin = false;
         [ObservableProperty] private bool labelEnd = false;
 
-        public delegate void InspectionEventDelegate(Events_System ev);
-
-        public event InspectionEventDelegate? Heartbeat;
-        public event InspectionEventDelegate? LabelStart;
-        public event InspectionEventDelegate? LabelEndEv;
-        public event InspectionEventDelegate? SetupCapture;
-        public event InspectionEventDelegate? SessionStateChange;
-        public event InspectionEventDelegate? StateChange;
-
-        public delegate void SetupDetectDelegate(Events_System ev, bool end);
-        public event SetupDetectDelegate? SetupDetect;
-
         public Controller(string host, uint port, uint nodeNumber, string userName, string password)
         {
             Host = host;
@@ -168,15 +168,20 @@ namespace V275_REST_Lib
             UserName = userName;
             Password = password;
 
-            SetupEvents();
+            WebSocket.MessageRecieved += WebSocketEvents_MessageRecieved;
+
+            LoadBase();
         }
-        public Controller(uint nodeNumber)
+
+        private void LoadBase()
         {
-            NodeNumber = nodeNumber;
-
-            SetupEvents();
+            Task.Run(async () =>
+            {
+                await UpdateDevices();
+                await UpdateInspection();
+                await UpdateProduct();
+            }).Wait();
         }
-
         public async Task Login(bool monitor)
         {
             if (IsLoggedIn)
@@ -210,7 +215,7 @@ namespace V275_REST_Lib
         }
         private bool PreLogin()
         {
-            if (IsSimulator)
+            if (IsSimulator && Host.Equals("127.0.0.1"))
             {
                 if (Directory.Exists(SimulatorImageDirectory))
                 {
@@ -285,8 +290,9 @@ namespace V275_REST_Lib
 
         public async Task Logout()
         {
+            await PreLogout();
 
-            PreLogout();
+            State = NodeStates.Offline;
 
             _ = await Commands.Logout();
 
@@ -304,22 +310,25 @@ namespace V275_REST_Lib
             IsLoggedIn_Control = false;
             IsLoggedIn_Monitor = false;
 
-            ConfigurationCamera = null;
-            Symbologies = null;
-            Calibration = null;
-            Jobs = null;
-            Print = null;
-            Simulation = null;
+            //_ = await UpdateDevices(true);
+            //_ = await UpdateInspection(true); 
+            //_ = await UpdateProduct(true);
 
-            State = NodeStates.Offline;
+            _ = await UpdateJobs(true);
+            _ = await UpdateJob(true);
+            _ = await UpdateConfigurationCamera(true);
+            _ = await UpdateSymbologies(true);
+            _ = await UpdateCalibration(true);
+            _ = await UpdateSimulation(true);
+            _ = await UpdatePrint(true);
         }
-        private async void PreLogout()
+        private async Task PreLogout()
         {
             //If the system is in simulator mode, adjust the simulation settings
             if (IsSimulator)
             {
                 // If the current simulation mode is 'continuous', change it to 'trigger' with a dwell time of 1ms
-                if (await UpdateSimulation() && Simulation.mode != "continuous")
+                if (await UpdateSimulation() && Simulation?.mode != "continuous")
                 {
                     Simulation.mode = "continuous";
                     Simulation.dwellMs = 1000;
@@ -336,46 +345,78 @@ namespace V275_REST_Lib
             _ = await Commands.SetSendExtendedData(false);
         }
 
-        public async Task<bool> UpdateDevice()
+        public async Task<bool> UpdateDevices(bool reset = false)
         {
-            var res = Commands.GetDevices();
-            if ((await res).OK)
+            Results res;
+            if (!reset && (res = await Commands.GetDevices()).OK)
             {
-                DeviceJSON = res.Result.Json;
-                if (res.Result.Object is Devices obj)
-                    Device = obj;
+                DevicesJSON = res.Json;
+                if (res.Object is Devices obj)
+                    Devices = obj;
             }
-            return IsDeviceValid;
-        }
-        public async Task<bool> UpdateInspection()
-        {
-            var res = Commands.GetInspection();
-            if ((await res).OK)
+            else
             {
-                InspectionJSON = res.Result.Json;
-                if (res.Result.Object is Inspection obj)
+                DevicesJSON = string.Empty;
+                Devices = null;
+            }
+            return IsDevicesValid;
+        }
+        public async Task<bool> UpdateInspection(bool reset = false)
+        {
+            Results res;
+            if (!reset && (res = await Commands.GetInspection()).OK)
+            {
+                InspectionJSON = res.Json;
+                if (res.Object is Inspection obj)
                     Inspection = obj;
+            }
+            else
+            {
+                InspectionJSON = string.Empty;
+                Inspection = null;
             }
             return IsInspectionValid;
         }
-        private async Task<bool> UpdateJobs()
+        private async Task<bool> UpdateProduct(bool reset = false)
         {
-            var res = Commands.GetJobs();
-            if ((await res).OK)
+            Results res;
+            if (!reset && (res = await Commands.GetProduct()).OK)
             {
-                JobsJSON = res.Result.Json;
-                if (res.Result.Object is Jobs obj)
+                ProductJSON = res.Json;
+                if (res.Object is Product obj)
+                    Product = obj;
+            }
+            else
+            {
+                ProductJSON = string.Empty;
+                Product = null;
+            }
+            return IsProductValid;
+        }
+
+        private async Task<bool> UpdateJobs(bool reset = false)
+        {
+            Results res;
+            if (!reset && (res = await Commands.GetJobs()).OK)
+            {
+                JobsJSON = res.Json;
+                if (res.Object is Jobs obj)
                     Jobs = obj;
+            }
+            else
+            {
+                JobsJSON = string.Empty;
+                Jobs = null;
             }
             return IsJobValid;
         }
-        private async Task<bool> UpdateJob()
+        private async Task<bool> UpdateJob(bool reset = false)
         {
-            var res = Commands.GetJob();
-            if ((await res).OK)
+            Results res;
+            if (!reset && (res = await Commands.GetJob()).OK)
             {
-                JobJSON = res.Result.Json;
-                if (res.Result.Object is Job obj)
+                JobJSON = res.Json;
+                if (res.Object is Job obj)
                     Job = obj;
 
                 if (IsJobValid)
@@ -390,76 +431,95 @@ namespace V275_REST_Lib
                         }
                     }
             }
+            else
+            {
+                JobJSON = string.Empty;
+                Job = null;
+            }
             return IsJobValid;
         }
-        private async Task<bool> UpdateProduct()
+        private async Task<bool> UpdateConfigurationCamera(bool reset = false)
         {
-            var res = Commands.GetProduct();
-            if ((await res).OK)
+            Results res;
+            if (!reset && (res = await Commands.GetCameraConfig()).OK)
             {
-                ProductJSON = res.Result.Json;
-                if (res.Result.Object is Product obj)
-                    Product = obj;
-            }
-            return IsProductValid;
-        }
-        private async Task<bool> UpdateConfigurationCamera()
-        {
-            var res = Commands.GetCameraConfig();
-            if ((await res).OK)
-            {
-                ConfigurationCameraJSON = res.Result.Json;
-                if (res.Result.Object is Configuration_Camera obj)
+                ConfigurationCameraJSON = res.Json;
+                if (res.Object is Configuration_Camera obj)
                     ConfigurationCamera = obj;
+            }
+            else
+            {
+                ConfigurationCameraJSON = string.Empty;
+                ConfigurationCamera = null;
             }
             return IsConfigurationCameraValid;
         }
-        private async Task<bool> UpdateSymbologies()
+        private async Task<bool> UpdateSymbologies(bool reset = false)
         {
-            var res = Commands.GetSymbologies();
-            if ((await res).OK)
+            Results res;
+            if (!reset && (res = await Commands.GetSymbologies()).OK)
             {
-                SymbologiesJSON = res.Result.Json;
-                if (res.Result.Object is List<Symbologies.Symbol> obj)
+                SymbologiesJSON = res.Json;
+                if (res.Object is List<Symbologies.Symbol> obj)
                     Symbologies = obj;
+            }
+            else
+            {
+                SymbologiesJSON = string.Empty;
+                Symbologies = null;
             }
             return IsSymbologiesValid;
         }
-        private async Task<bool> UpdateCalibration()
+        private async Task<bool> UpdateCalibration(bool reset = false)
         {
-            var res = Commands.GetCalibration();
-            if ((await res).OK)
+            Results res;
+            if (!reset && (res = await Commands.GetCalibration()).OK)
             {
-                CalibrationJSON = res.Result.Json;
-                if (res.Result.Object is Calibration obj)
+                CalibrationJSON = res.Json;
+                if (res.Object is Calibration obj)
                     Calibration = obj;
+            }
+            else
+            {
+                CalibrationJSON = string.Empty;
+                Calibration = null;
             }
             return IsCalibrationValid;
         }
-        private async Task<bool> UpdateSimulation()
+        private async Task<bool> UpdateSimulation(bool reset = false)
         {
-            var res = Commands.GetSimulation();
-            if ((await res).OK)
+            Results res;
+            if (!reset && (res = await Commands.GetSimulation()).OK)
             {
-                SimulationJSON = res.Result.Json;
-                if (res.Result.Object is Simulation obj)
+                SimulationJSON = res.Json;
+                if (res.Object is Simulation obj)
                     Simulation = obj;
+            }
+            else
+            {
+                SimulationJSON = string.Empty;
+                Simulation = null;
             }
             return IsSimulationValid;
         }
-        private async Task<bool> UpdatePrint()
+        private async Task<bool> UpdatePrint(bool reset = false)
         {
-            var res = Commands.GetPrint();
-            if ((await res).OK)
+            Results res;
+            if (!reset && (res = await Commands.GetPrint()).OK)
             {
-                PrintJSON = res.Result.Json;
-                if (res.Result.Object is Print obj)
+                PrintJSON = res.Json;
+                if (res.Object is Print obj)
                     Print = obj;
+            }
+            else
+            {
+                PrintJSON = string.Empty;
+                Print = null;
             }
             return IsPrintValid;
         }
 
-        private void V275_API_WebSocketEvents_MessageRecieved(string message)
+        private void WebSocketEvents_MessageRecieved(string message)
         {
             string tmp;
             tmp = message.Remove(2, 15);
@@ -475,71 +535,60 @@ namespace V275_REST_Lib
 
             if (ev.name == "heartbeat")
             {
-                Heartbeat?.Invoke(ev);
+                WebSocket_Heartbeat(ev);
                 return;
             }
 
-            //using (StreamWriter sw = File.AppendText("capture_node.txt"))
-            //    sw.WriteLine(message);
-
-            if (ev.name == "setupCapture")
-            {
-                LogDebug($"WSE: setupCapture {ev.source}; {ev.name}");
-                SetupCapture?.Invoke(ev);
-                return;
-            }
+            //if (ev.name == "setupCapture")
+            //{
+            //    LogDebug($"WSE: setupCapture {ev.source}; {ev.name}");
+            //    SetupCapture?.Invoke(ev);
+            //    return;
+            //}
 
             if (ev.name.StartsWith("setupDetect"))
             {
                 if (ev.name.EndsWith("End"))
                 {
                     LogDebug($"WSE: setupDetect {ev.source}; {ev.name}");
-                    SetupDetect?.Invoke(ev, true);
+                    WebSocket_SetupDetect(ev, true);
                     return;
                 }
 
                 LogDebug($"WSE: setupDetect {ev.source}; {ev.name}");
-                SetupDetect?.Invoke(ev, false);
+                WebSocket_SetupDetect(ev, false);
                 return;
             }
 
             if (ev.name == "stateChange")
             {
                 LogDebug($"WSE: stateChange : {ev.source}; {ev.name}");
-                StateChange?.Invoke(ev);
+                WebSocket_StateChange(ev);
                 return;
             }
 
-            if (ev.name == "sessionStateChange")
-            {
-                LogDebug($"WSE: sessionStateChange {ev.source}; {ev.name}");
-                SessionStateChange?.Invoke(ev);
-                return;
-            }
+            //if (ev.name == "sessionStateChange")
+            //{
+            //    LogDebug($"WSE: sessionStateChange {ev.source}; {ev.name}");
+            //    SessionStateChange?.Invoke(ev);
+            //    return;
+            //}
 
             if (ev.name == "labelEnd")
             {
                 LogDebug($"WSE: labelEnd {ev.source}; {ev.name}");
-                LabelEndEv?.Invoke(ev);
+                WebSocket_LabelEnd(ev);
                 return;
             }
 
             if (ev.name == "labelBegin")
             {
                 LogDebug($"WSE: labelBegin {ev.source}; {ev.name}");
-                LabelStart?.Invoke(ev);
+                WebSocket_LabelStart(ev);
                 return;
             }
         }
 
-        private void SetupEvents()
-        {
-            Heartbeat += WebSocket_Heartbeat;
-            StateChange += WebSocket_StateChange;
-            LabelStart += WebSocket_LabelStart;
-            LabelEndEv += WebSocket_LabelEnd;
-            SetupDetect += WebSocket_SetupDetect;
-        }
         private void WebSocket_SetupDetect(Models.Events_System ev, bool end)
         {
             SetupDetectEvent = ev;
@@ -605,16 +654,14 @@ namespace V275_REST_Lib
             else
                 return NodeStates.Offline;
         }
-
         public async Task ChangeJob(string name)
         {
             if ((await Commands.UnloadJob()).OK)
                 if ((await Commands.LoadJob(name)).OK)
                 {
-
+                    await SwitchToEdit();
                 }
         }
-
         public async Task TogglePrint(bool enable)
         {
             if (!IsSimulator)
@@ -682,7 +729,7 @@ namespace V275_REST_Lib
             FullReport report = new();
             if (State == NodeStates.Editing)
             {
-                if((report.report = (await Commands.GetReport()).Object as Report) == null)
+                if ((report.report = (await Commands.GetReport()).Object as Report) == null)
                     return null;
             }
             else
@@ -708,7 +755,7 @@ namespace V275_REST_Lib
             Job? job;
             if ((job = (await Commands.GetJob()).Object as Job) == null)
                 return false;
-            
+
             foreach (var sec in job.sectors)
                 if (!(await Commands.DeleteSector(sec.name)).OK)
                     return false;

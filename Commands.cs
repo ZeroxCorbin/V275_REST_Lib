@@ -9,22 +9,18 @@ using V275_REST_Lib.Logging;
 using V275_REST_Lib.Models;
 
 namespace V275_REST_Lib
-{ 
+{
     public class Results
-        {
-            //Json and Object are OK
-            public bool OK { get; set; } = false;
-
-            public string Json { get; set; } = string.Empty;
-            public object? Object { get; set; }
-
-            public HttpResponseMessage? HttpResponseMessage { get; set; }
-        }
+    {
+        //Json and Object are OK
+        public bool OK { get; set; } = false;
+        public string Json { get; set; } = string.Empty;
+        public object? Object { get; set; }
+        public HttpResponseMessage? HttpResponseMessage { get; set; }
+    }
 
     public class Commands
     {
-
-
         public Connection Connection { get; } = new Connection();
         public URLs URLs { get; } = new URLs();
         public string Token { get; private set; } = string.Empty;
@@ -170,10 +166,6 @@ namespace V275_REST_Lib
             return results;
         }
 
-        public async Task<Results> GetDevices() => CheckResults<Models.Devices>(await Connection.Get(URLs.Devices(), string.Empty));
-        public async Task<Results> GetInspection() => CheckResults<Models.Inspection>(await Connection.Get(URLs.Inspection(), string.Empty));
-        public async Task<Results> GetProduct() => CheckResults<Models.Product>(await Connection.Get(URLs.Product(), string.Empty));
-
         public async Task<Results> Login(string user, string pass, bool monitor, bool temporary = false)
         {
             Results results = new()
@@ -197,6 +189,10 @@ namespace V275_REST_Lib
             Token = string.Empty;
             return results;
         }
+
+        public async Task<Results> GetDevices() => CheckResults<Models.Devices>(await Connection.Get(URLs.Devices(), string.Empty));
+        public async Task<Results> GetInspection() => CheckResults<Models.Inspection>(await Connection.Get(URLs.Inspection(), string.Empty));
+        public async Task<Results> GetProduct() => CheckResults<Models.Product>(await Connection.Get(URLs.Product(), string.Empty));
 
         public async Task<Results> GetGradingStandards() => CheckResults<Models.GradingStandards>(await Connection.Get(URLs.GradingStandards(), Token));
         public async Task<Results> GetSymbologies() => CheckResults<List<Models.Symbologies.Symbol>>(await Connection.Get(URLs.VerifySymbologies(), Token));

@@ -84,6 +84,10 @@ namespace V275_REST_Lib
                 _ = Task.Run(() => SocketState?.Invoke(Socket.State));
                 return;
             }
+
+            // whether we close the socket or time out, we cancel the token causing RecieveAsync to abort the socket
+            SocketLoopTokenSource?.Cancel();
+
             // close the socket first, because ReceiveAsync leaves an invalid socket (state = aborted) when the token is cancelled
             CancellationTokenSource timeout = new CancellationTokenSource(10000);
             try
