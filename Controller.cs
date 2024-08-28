@@ -74,17 +74,17 @@ namespace V275_REST_Lib
 
         private ConcurrentDictionary<int, Repeat> RepeatBuffer { get; } = [];
 
-        [ObservableProperty][property: JsonProperty] private string host = "127.0.0.1";
+        [ObservableProperty][property: JsonProperty] private string host;
         partial void OnHostChanged(string value) { Commands.URLs.Host = value; }
 
-        [ObservableProperty][property: JsonProperty] private uint systemPort = 8080;
+        [ObservableProperty][property: JsonProperty] private uint systemPort;
         partial void OnSystemPortChanged(uint value) { Commands.URLs.SystemPort = value; }
 
-        [ObservableProperty][property: JsonProperty] private uint nodeNumber = 0;
+        [ObservableProperty][property: JsonProperty] private uint nodeNumber;
         partial void OnNodeNumberChanged(uint value) { Commands.URLs.NodeNumber = value; }
 
-        [ObservableProperty][property: JsonProperty] string userName = "admin";
-        [ObservableProperty][property: JsonProperty] string password = "admin";
+        [ObservableProperty][property: JsonProperty] string userName;
+        [ObservableProperty][property: JsonProperty] string password;
         [ObservableProperty][property: JsonProperty] string simulatorImageDirectory;
 
         [ObservableProperty] private NodeStates state = NodeStates.Offline;
@@ -180,7 +180,7 @@ namespace V275_REST_Lib
 
         [ObservableProperty] private int dpi = 600;
         partial void OnDpiChanged(int value) => OnPropertyChanged(nameof(Is600Dpi));
-        public bool Is600Dpi => Dpi == 600;
+        public bool Is600Dpi => Dpi > 0 ? Dpi == 600 : true;
 
         public bool IsSimulator => IsInspectionValid && Inspection.device.Equals("simulator");
         public bool IsBackupVoid => IsConfigurationCameraValid && ConfigurationCamera?.backupVoidMode?.value == "ON";
@@ -192,18 +192,20 @@ namespace V275_REST_Lib
         [ObservableProperty] private bool labelBegin = false;
         [ObservableProperty] private bool labelEnd = false;
 
-        public Controller(string host, uint port, uint nodeNumber, string userName, string password)
+        public Controller(string host, uint port, uint nodeNumber, string userName, string password, string dir)
         {
             Host = host;
             SystemPort = port;
             NodeNumber = nodeNumber;
             UserName = userName;
             Password = password;
+            SimulatorImageDirectory = dir;
 
             WebSocket.MessageRecieved += WebSocketEvents_MessageRecieved;
 
-            LoadBase();
+
         }
+        public void Initialize() => LoadBase();
 
         private void LoadBase()
         {
@@ -1184,7 +1186,8 @@ namespace V275_REST_Lib
             Detect = 2,
             Failure = -1
         }
-        public async Task<RestoreSectorsResults> RetoreSectors(List<Job.Sector> sectors)
+
+        private async Task<RestoreSectorsResults> RetoreSectors(List<Job.Sector> sectors)
         {
             if (!await DeleteSectors())
                 return RestoreSectorsResults.Failure;
