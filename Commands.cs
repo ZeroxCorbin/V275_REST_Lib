@@ -229,7 +229,7 @@ namespace V275_REST_Lib
         public async Task<Results> Inspect() => CheckResults(await Connection.Put(URLs.Inspect(), string.Empty, Token));
         public async Task<Results> Detect() => CheckResults(await Connection.Put(URLs.Detect(), string.Empty, Token));
         public async Task<Results> RemoveRepeat(int repeat) => CheckResults(await Connection.Put(URLs.Remove(repeat), string.Empty, Token));
-        public async Task<Results> Print(bool enabled) => CheckResults(await Connection.Put(URLs.Print(), URLs.Print_Body(enabled), Token));
+        public async Task<Results> Print(Print print) => CheckResults(await Connection.Put(URLs.Print(), JsonConvert.SerializeObject(print), Token));
         public async Task<Results> PutSimulation(Simulation simulation) => CheckResults(await Connection.Put(URLs.Simulation(), JsonConvert.SerializeObject(simulation), Token));
         public async Task<Results> SimulationTriggerImage(SimulationTrigger simulationTrigger) => CheckResults(await Connection.Put(URLs.SimulationTriggerImage(simulationTrigger.dpi), simulationTrigger.image, Token));
         public async Task<Results> SimulationTrigger() => CheckResults(await Connection.Put(URLs.SimulationTrigger(), string.Empty, Token));

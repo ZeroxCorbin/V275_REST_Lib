@@ -44,6 +44,7 @@ namespace V275_REST_Lib
         public string GradingStandards() => $"{NodeBase}/{NodeNumber}/gradingstandards";
 
         public string Job() => $"{NodeBase}/{NodeNumber}/inspection/job";
+
         public string DeleteSector(string sectorName) => $"{NodeBase}/{NodeNumber}/inspection/job/sectors/{sectorName}";
         public string AddSector(string sectorName) => $"{NodeBase}/{NodeNumber}/inspection/job/sectors/{sectorName}";
 

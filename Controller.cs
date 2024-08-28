@@ -1,25 +1,56 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Threading;
 using System.Threading.Tasks;
+using V275_REST_Lib.Enumerations;
 using V275_REST_Lib.Logging;
 using V275_REST_Lib.Models;
-using static V275_REST_Lib.Models.Report_InspectSector_Common;
 
 namespace V275_REST_Lib
 {
-    public enum NodeStates
+    public class Label
     {
-        Offline,
-        Idle,
-        Editing,
-        Running,
-        Paused,
-        Disconnected
+        public byte[] Image { get; set; }
+        public List<Job.Sector> Sectors { get; set; }
+        public GS1TableNames Table { get; set; }
+        public int Dpi { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="image"></param>
+        /// <param name="dpi">Must be set if using the simulator API.</param>
+        /// <param name="sectors">If null, ignore. If empty, auto detect. If not empty, restore.</param>
+        /// <param name="table"></param>
+        public Label(byte[] image, int dpi, List<Job.Sector> sectors, GS1TableNames table = GS1TableNames.None)
+        {
+            Table = table;
+            Dpi = dpi;
+            Image = image;
+            Sectors = sectors;
+        }
+        public Label() { }
+    }
+
+    public class FullReport
+    {
+        public Report? Report { get; set; }
+        public Job? Job { get; set; }
+        public byte[]? Image { get; set; }
+    }
+
+    public class Repeat
+    {
+        public int Number { get; set; } = -1;
+        public FullReport FullReport { get; set; } = new FullReport();
     }
 
     [JsonObject(MemberSerialization.OptIn)]
@@ -41,6 +72,7 @@ namespace V275_REST_Lib
         public Commands Commands { get; } = new Commands();
         public WebSocketEvents WebSocket { get; } = new WebSocketEvents();
 
+        private ConcurrentDictionary<int, Repeat> RepeatBuffer { get; } = [];
 
         [ObservableProperty][property: JsonProperty] private string host = "127.0.0.1";
         partial void OnHostChanged(string value) { Commands.URLs.Host = value; }
@@ -545,18 +577,16 @@ namespace V275_REST_Lib
             //    SetupCapture?.Invoke(ev);
             //    return;
             //}
-
-            if (ev.name.StartsWith("setupDetect"))
+            if (ev.name == "setupDetectStart")
             {
-                if (ev.name.EndsWith("End"))
-                {
-                    LogDebug($"WSE: setupDetect {ev.source}; {ev.name}");
-                    WebSocket_SetupDetect(ev, true);
-                    return;
-                }
-
-                LogDebug($"WSE: setupDetect {ev.source}; {ev.name}");
+                LogDebug($"WSE: setupDetectStart {ev.source}; {ev.name}");
                 WebSocket_SetupDetect(ev, false);
+                return;
+            }
+            if (ev.name == "setupDetectEnd")
+            {
+                LogDebug($"WSE: setupDetectEnd {ev.source}; {ev.name}");
+                WebSocket_SetupDetect(ev, true);
                 return;
             }
 
@@ -567,17 +597,10 @@ namespace V275_REST_Lib
                 return;
             }
 
-            //if (ev.name == "sessionStateChange")
-            //{
-            //    LogDebug($"WSE: sessionStateChange {ev.source}; {ev.name}");
-            //    SessionStateChange?.Invoke(ev);
-            //    return;
-            //}
-
-            if (ev.name == "labelEnd")
+            if (ev.name == "sessionStateChange")
             {
-                LogDebug($"WSE: labelEnd {ev.source}; {ev.name}");
-                WebSocket_LabelEnd(ev);
+                LogDebug($"WSE: sessionStateChange {ev.source}; {ev.name}");
+                WebSocket_SessionStateChange(ev);
                 return;
             }
 
@@ -587,6 +610,26 @@ namespace V275_REST_Lib
                 WebSocket_LabelStart(ev);
                 return;
             }
+            if (ev.name == "labelEnd")
+            {
+                LogDebug($"WSE: labelEnd {ev.source}; {ev.name}");
+                WebSocket_LabelEnd(ev);
+                return;
+            }
+
+            if (ev.name == "sectorBegin")
+            {
+                LogDebug($"WSE: sectorBegin {ev.source}; {ev.name}");
+                return;
+            }
+            if (ev.name == "sectorEnd")
+            {
+                LogDebug($"WSE: sectorEnd {ev.source}; {ev.name}"); ;
+                return;
+            }
+
+            LogDebug($"WSE: labelStart {ev.source}; {ev.name}");
+
         }
 
         private void WebSocket_SetupDetect(Models.Events_System ev, bool end)
@@ -602,6 +645,14 @@ namespace V275_REST_Lib
         private void WebSocket_LabelEnd(Models.Events_System ev)
         {
             LabelEnd = true;
+
+            if (State == NodeStates.Editing)
+                return;
+
+            RepeatBuffer.TryAdd(ev.data.repeat, new Repeat() { Number = ev.data.repeat });
+
+            if (IsLoggedIn_Control)
+                ProcessRepeat(ev.data.repeat);
         }
         private void WebSocket_Heartbeat(Events_System? ev)
         {
@@ -635,6 +686,25 @@ namespace V275_REST_Lib
             }
             else
                 WebSocket_Heartbeat(null);
+
+            if (ev != null)
+                if (ev.data.toState == "editing" || (ev.data.toState == "running" && ev.data.fromState != "paused"))
+                    RepeatBuffer.Clear();
+        }
+        private void WebSocket_SessionStateChange(Events_System ev)
+        {
+            //if (ev.data.id == LoginData.id)
+            if (ev.data.state == "0")
+                if (ev.data.accessLevel == "control")
+                    if (LoginData.accessLevel == "control")
+                        if (ev.data.token != LoginData.token)
+                            _ = Logout();
+        }
+        private void WebSocket_SetupCapture(Events_System ev)
+        {
+            if (IsLoggedIn_Control)
+                if (RepeatBuffer.TryAdd(ev.data.repeat, new Repeat() { Number = ev.data.repeat }))
+                    ProcessRepeat(ev.data.repeat);
         }
 
         private NodeStates GetState(string state)
@@ -659,7 +729,7 @@ namespace V275_REST_Lib
             if ((await Commands.UnloadJob()).OK)
                 if ((await Commands.LoadJob(name)).OK)
                 {
-                    await SwitchToEdit();
+                    //await SwitchToEdit();
                 }
         }
         public async Task TogglePrint(bool enable)
@@ -670,15 +740,20 @@ namespace V275_REST_Lib
                 {
                     if (Print.enabled)
                     {
-                        _ = await Commands.Print(false);
+                        Print.enabled = false;
+                        _ = await Commands.Print(Print);
                         Thread.Sleep(100);
                     }
-
                 }
 
                 if (await UpdatePrint())
                     if (Print.enabled != enable)
-                        _ = await Commands.Print(enable);
+                    {
+                        Print.enabled = enable;
+                        _ = await Commands.Print(Print);
+                    }
+
+                await UpdatePrint();
             }
             else
                 _ = await SimulatorTogglePrint();
@@ -718,28 +793,23 @@ namespace V275_REST_Lib
             return LabelEnd;
         }
 
-        public class FullReport
-        {
-            public Report? report;
-            public Job? job;
-            public byte[]? image;
-        }
+
         public async Task<FullReport?> GetReport(int repeat, bool getImage)
         {
             FullReport report = new();
             if (State == NodeStates.Editing)
             {
-                if ((report.report = (await Commands.GetReport()).Object as Report) == null)
+                if ((report.Report = (await Commands.GetReport()).Object as Report) == null)
                     return null;
             }
             else
             {
-                if ((report.report = (await Commands.GetReport(repeat)).Object as Report) == null)
+                if ((report.Report = (await Commands.GetReport(repeat)).Object as Report) == null)
                     return null;
             }
 
             if (getImage)
-                if ((report.image = (await Commands.GetRepeatsImage(repeat)).Object as byte[]) == null)
+                if ((report.Image = (await Commands.GetRepeatsImage(repeat)).Object as byte[]) == null)
                 {
                     //if (!Commands.Status.StartsWith("Gone"))
                     //{
@@ -752,14 +822,12 @@ namespace V275_REST_Lib
 
         public async Task<bool> DeleteSectors()
         {
-            Job? job;
-            if ((job = (await Commands.GetJob()).Object as Job) == null)
+            if (!await UpdateJob())
                 return false;
 
-            foreach (var sec in job.sectors)
+            foreach (var sec in Job.sectors)
                 if (!(await Commands.DeleteSector(sec.name)).OK)
                     return false;
-
             return true;
         }
         public async Task<bool> DetectSectors()
@@ -922,20 +990,16 @@ namespace V275_REST_Lib
             if ((report = await GetReport(repeat, getImage)) == null)
                 return null;
 
-            if ((report.job = (await Commands.GetJob()).Object as Job) == null)
+            if ((report.Job = (await Commands.GetJob()).Object as Job) == null)
                 return null;
 
             if (State == NodeStates.Paused)
             {
                 if (!(await Commands.RemoveRepeat(repeat)).OK)
-                {
                     return null;
-                }
-
+               
                 if (!(await Commands.ResumeJob()).OK)
-                {
                     return null;
-                }
             }
             return report;
         }
@@ -944,6 +1008,225 @@ namespace V275_REST_Lib
             var res = State == NodeStates.Running ? (await Commands.GetRepeatsAvailableRun()).Object as List<int> : (await Commands.GetRepeatsAvailable()).Object as List<int>;
             return res == null ? 0 : res.Count > 0 ? res.First() : 0;
         }
+
+        #region V275 Image Results
+
+        private Label ActiveLabel { get; set; }
+
+        public async Task ProcessImage_Print(Label label)
+        {
+            ActiveLabel = label;
+
+            LogWarning("No node selected.");
+
+            if (!IsSimulator && State != NodeStates.Idle && IsLoggedIn_Control)
+                await TogglePrint(true);
+
+        }
+        public async Task ProcessImage_Simulator(Label label)
+        {
+            ActiveLabel = label;
+
+            if (!Host.Equals("127.0.0.1"))
+                ProcessImage_API();
+            else
+            {
+                ProcessImage_FileSystem();
+
+                if (!IsLoggedIn_Control)
+                {
+                    if (!(await Commands.SimulationTrigger()).OK)
+                        LogError("Error triggering the simulator.");
+                }
+            }
+        }
+
+        private async void ProcessImage_API()
+        {
+
+            if (ActiveLabel == null)
+            {
+                LogError($"The image is null.");
+                return;
+            }
+
+            if (!(await Commands.SimulationTriggerImage(
+                new SimulationTrigger()
+                {
+                    image = ActiveLabel.Image,
+                    dpi = (uint)ActiveLabel.Dpi
+                })).OK)
+            {
+                LogError("Error triggering the simulator.");
+                return;
+            }
+        }
+        private void ProcessImage_FileSystem()
+        {
+            try
+            {
+                int verRes = 1;
+                string prepend = "";
+
+                Simulator.SimulatorFileHandler sim = new(SimulatorImageDirectory);
+
+                if (!sim.DeleteAllImages())
+                {
+                    string verCur = Product?.part?[(Product.part.LastIndexOf('-') + 1)..];
+
+                    if (verCur != null)
+                    {
+                        Version ver = System.Version.Parse(verCur);
+                        Version verMin = System.Version.Parse("1.1.0.3009");
+                        verRes = ver.CompareTo(ver);
+                    }
+
+                    if (verRes > 0)
+                    {
+                        LogError("Could not delete all simulator images.");
+                        return;
+                    }
+                    else
+                    {
+                        sim.UpdateImageList();
+
+                        prepend = "_";
+
+                        foreach (string imgFile in sim.Images)
+                        {
+                            string name = Path.GetFileName(imgFile);
+
+                            for (; ; )
+                            {
+                                if (name.StartsWith(prepend))
+                                    prepend += prepend;
+                                else
+                                    break;
+                            }
+                        }
+                    }
+                }
+
+                if (!sim.SaveImage(prepend + "simulatorImage", ActiveLabel.Image))
+                {
+                    LogError("Could not copy the image to the simulator images directory.");
+                    return;
+                }
+
+            }
+            catch (Exception ex)
+            {
+                LogError(ex.Message);
+            }
+        }
+
+        private async void ProcessRepeat(int repeat)
+        {
+            if (ActiveLabel.Sectors != null)
+            {
+                if (repeat > 0)
+                    if (!(await Commands.SetRepeat(repeat)).OK)
+                    {
+                        LogError("Error setting the repeat.");
+                        return;
+                    }
+
+                var res = await RetoreSectors(ActiveLabel.Sectors);
+
+                if (res == RestoreSectorsResults.Failure)
+                    return;
+
+                if (res == RestoreSectorsResults.Detect)
+                {
+                    List<Sector_New_Verify> sectors = CreateSectors(SetupDetectEvent, V275GetTableID(ActiveLabel.Table), Symbologies);
+
+                    LogInfo("Restoring sectors.");
+
+                    foreach (Sector_New_Verify sec in sectors)
+                        if (!await AddSector(sec.name, JsonConvert.SerializeObject(sec)))
+                            return;
+                }
+            }
+
+            LogInfo("Reading results and Image.");
+            if (!await ReadTask(repeat))
+                return;
+        }
+
+        private string V275GetTableID(GS1TableNames gS1TableTypes)
+            => gS1TableTypes switch
+            {
+                GS1TableNames._1 => "1",
+                GS1TableNames._2 => "2",
+                GS1TableNames._3 => "3",
+                GS1TableNames._4 => "4",
+                GS1TableNames._5 => "5",
+                GS1TableNames._6 => "6",
+                GS1TableNames._7_1 => "7.1",
+                GS1TableNames._7_2 => "7.2",
+                GS1TableNames._7_3 => "7.3",
+                GS1TableNames._7_4 => "7.4",
+                GS1TableNames._8 => "8",
+                GS1TableNames._9 => "9",
+                GS1TableNames._10 => "10",
+                GS1TableNames._11 => "11",
+                GS1TableNames._12_1 => "12.1",
+                GS1TableNames._12_2 => "12.2",
+                GS1TableNames._12_3 => "12.3",
+                _ => "",
+            };
+
+        //private void ProcessRepeatFault(int repeat) => TempRepeats.Clear();
+
+        public enum RestoreSectorsResults
+        {
+            Success = 1,
+            Detect = 2,
+            Failure = -1
+        }
+        public async Task<RestoreSectorsResults> RetoreSectors(List<Job.Sector> sectors)
+        {
+            if (!await DeleteSectors())
+                return RestoreSectorsResults.Failure;
+
+            if (sectors.Count == 0)
+                return !await DetectSectors() ? RestoreSectorsResults.Failure : RestoreSectorsResults.Detect;
+
+            foreach (var sec in sectors)
+            {
+                if (!await AddSector(sec.name, JsonConvert.SerializeObject(sec)))
+                    return RestoreSectorsResults.Failure;
+
+                if (sec.blemishMask?.layers != null)
+                    foreach (Job.Layer layer in sec.blemishMask.layers)
+                        if (!await AddMask(sec.name, JsonConvert.SerializeObject(layer)))
+                            if (layer.value != 0)
+                                return RestoreSectorsResults.Failure;
+            }
+
+            return RestoreSectorsResults.Success;
+        }
+
+        public async Task<bool> ReadTask(int repeat)
+        {
+            FullReport report;
+            if ((report = await Read(repeat, true)) == null)
+            {
+                LogError("Unable to read the repeat report from the node.");
+                return false;
+            }
+
+            if (RepeatBuffer.TryGetValue(repeat, out Repeat rep))
+            {
+                rep.FullReport = report;
+                return true;
+            }
+
+            LogError("Unable to find the repeat in the buffer.");
+            return false;
+        }
+
+        #endregion
 
         #region Logging
         private readonly Logger logger = new();
