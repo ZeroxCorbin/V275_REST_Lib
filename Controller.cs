@@ -8,6 +8,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Emit;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,6 +24,8 @@ namespace V275_REST_Lib
         public List<Job.Sector> Sectors { get; set; }
         public GS1TableNames Table { get; set; }
         public int Dpi { get; set; }
+
+        public Action<Repeat> RepeatAvailable { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -30,8 +33,9 @@ namespace V275_REST_Lib
         /// <param name="dpi">Must be set if using the simulator API.</param>
         /// <param name="sectors">If null, ignore. If empty, auto detect. If not empty, restore.</param>
         /// <param name="table"></param>
-        public Label(byte[] image, int dpi, List<Job.Sector> sectors, GS1TableNames table = GS1TableNames.None)
+        public Label(Action<Repeat> repeatAvailable, byte[] image, int dpi, List<Job.Sector> sectors, GS1TableNames table = GS1TableNames.None)
         {
+            RepeatAvailable = repeatAvailable;
             Table = table;
             Dpi = dpi;
             Image = image;
@@ -51,11 +55,26 @@ namespace V275_REST_Lib
     {
         public int Number { get; set; } = -1;
         public FullReport FullReport { get; set; } = new FullReport();
+        public Label Label { get; set; }
+        public Events_System? SetupDetectEvent { get; set; }
+
+        public Repeat(int number, Label label)
+        {
+            Number = number;
+            Label = label;
+        }
     }
 
     [JsonObject(MemberSerialization.OptIn)]
     public partial class Controller : ObservableObject
     {
+        public enum RestoreSectorsResults
+        {
+            Success = 1,
+            Detect = 2,
+            Failure = -1
+        }
+
         public Dictionary<int, string> MatchModes { get; } = new Dictionary<int, string>()
         {
             {0, "Standard" },
@@ -186,11 +205,7 @@ namespace V275_REST_Lib
         public bool IsBackupVoid => IsConfigurationCameraValid && ConfigurationCamera?.backupVoidMode?.value == "ON";
         public string? JobName => IsJobValid ? Job?.name : "";
 
-        public Events_System SetupDetectEvent { get; set; }
-        private bool SetupDetectEnd { get; set; } = false;
-
-        [ObservableProperty] private bool labelBegin = false;
-        [ObservableProperty] private bool labelEnd = false;
+        private bool LabelStart;
 
         public Controller(string host, uint port, uint nodeNumber, string userName, string password, string dir)
         {
@@ -202,8 +217,6 @@ namespace V275_REST_Lib
             SimulatorImageDirectory = dir;
 
             WebSocket.MessageRecieved += WebSocketEvents_MessageRecieved;
-
-
         }
         public void Initialize() => LoadBase();
 
@@ -567,94 +580,82 @@ namespace V275_REST_Lib
                 if (ev.name == "heartbeat")
                     return;
 
-            if (ev.name == "heartbeat")
+            switch (ev.name)
             {
-                WebSocket_Heartbeat(ev);
-                return;
+                case "heartbeat":
+                    WebSocket_Heartbeat(ev);
+                    break;
+                case "setupCapture":
+                    LogDebug($"WSE: setupCapture {ev.source}; {ev.name}");
+                    WebSocket_SetupCapture(ev);
+                    break;
+                case "setupDetectBegin":
+                    LogDebug($"WSE: setupDetectBegin {ev.source}; {ev.name}");
+                    //WebSocket_SetupDetect(ev, false);
+                    break;
+                case "setupDetectStart":
+                    LogDebug($"WSE: setupDetectStart {ev.source}; {ev.name}");
+                    break;
+                case "setupDetect":
+                    LogDebug($"WSE: setupDetect {ev.source}; {ev.name}");
+                    break;
+                case "setupDetectEnd":
+                    LogDebug($"WSE: setupDetectEnd {ev.source}; {ev.name}");
+                    WebSocket_SetupDetectEnd(ev);
+                    break;
+                case "stateChange":
+                    LogDebug($"WSE: stateChange : {ev.source}; {ev.name}");
+                    WebSocket_StateChange(ev);
+                    break;
+                case "sessionStateChange":
+                    LogDebug($"WSE: sessionStateChange {ev.source}; {ev.name}");
+                    WebSocket_SessionStateChange(ev);
+                    break;
+                case "labelBegin":
+                    LogDebug($"WSE: labelBegin {ev.source}; {ev.name}");
+                    WebSocket_LabelStart(ev);
+                    break;
+                case "labelEnd":
+                    LogDebug($"WSE: labelEnd {ev.source}; {ev.name}");
+                    WebSocket_LabelEnd(ev);
+                    break;
+                case "sectorBegin":
+                    LogDebug($"WSE: sectorBegin {ev.source}; {ev.name}");
+                    break;
+                case "sectorEnd":
+                    LogDebug($"WSE: sectorEnd {ev.source}; {ev.name}");
+                    break;
+                default:
+                    LogWarning($"Unknown event type: {ev.name}");
+                    break;
             }
-
-            //if (ev.name == "setupCapture")
-            //{
-            //    LogDebug($"WSE: setupCapture {ev.source}; {ev.name}");
-            //    SetupCapture?.Invoke(ev);
-            //    return;
-            //}
-            if (ev.name == "setupDetectStart")
-            {
-                LogDebug($"WSE: setupDetectStart {ev.source}; {ev.name}");
-                WebSocket_SetupDetect(ev, false);
-                return;
-            }
-            if (ev.name == "setupDetectEnd")
-            {
-                LogDebug($"WSE: setupDetectEnd {ev.source}; {ev.name}");
-                WebSocket_SetupDetect(ev, true);
-                return;
-            }
-
-            if (ev.name == "stateChange")
-            {
-                LogDebug($"WSE: stateChange : {ev.source}; {ev.name}");
-                WebSocket_StateChange(ev);
-                return;
-            }
-
-            if (ev.name == "sessionStateChange")
-            {
-                LogDebug($"WSE: sessionStateChange {ev.source}; {ev.name}");
-                WebSocket_SessionStateChange(ev);
-                return;
-            }
-
-            if (ev.name == "labelBegin")
-            {
-                LogDebug($"WSE: labelBegin {ev.source}; {ev.name}");
-                WebSocket_LabelStart(ev);
-                return;
-            }
-            if (ev.name == "labelEnd")
-            {
-                LogDebug($"WSE: labelEnd {ev.source}; {ev.name}");
-                WebSocket_LabelEnd(ev);
-                return;
-            }
-
-            if (ev.name == "sectorBegin")
-            {
-                LogDebug($"WSE: sectorBegin {ev.source}; {ev.name}");
-                return;
-            }
-            if (ev.name == "sectorEnd")
-            {
-                LogDebug($"WSE: sectorEnd {ev.source}; {ev.name}"); ;
-                return;
-            }
-
-            LogDebug($"WSE: labelStart {ev.source}; {ev.name}");
-
         }
 
-        private void WebSocket_SetupDetect(Models.Events_System ev, bool end)
+        /// <summary>
+        /// <see langword="this"/> occurs when the Setup Detection completes.
+        /// The detected regions will be in the <see cref="Events_System.data"/> property.
+        /// </summary>
+        /// <param name="ev"></param>
+        /// <param name="end"></param>
+        private void WebSocket_SetupDetectEnd(Models.Events_System ev)
         {
-            SetupDetectEvent = ev;
-            SetupDetectEnd = end;
-            LabelBegin = true;
+            LogDebug($"SetupDetect: Controller State is? {State}: ActiveLabel is null? {ActiveLabel == null}: IsLoggedIn_Control? {IsLoggedIn_Control}: Event.Data is null? {ev.data == null}");
+
+            if (State != NodeStates.Editing)
+                return;
+
+            if (ActiveLabel != null && IsLoggedIn_Control && ev.data! != null)
+                ProcessLabel(ev.data.repeat, ActiveLabel, ev);
         }
-        private void WebSocket_LabelStart(Events_System ev)
-        {
-            LabelBegin = true;
-        }
+        private void WebSocket_LabelStart(Events_System ev) { LabelStart = true; }
         private void WebSocket_LabelEnd(Models.Events_System ev)
         {
-            LabelEnd = true;
+            LogDebug($"LabelEnd: Controller State is? {State}: ActiveLabel is null? {ActiveLabel == null}: IsLoggedIn_Control? {IsLoggedIn_Control}: Event.Data is null? {ev.data == null}");
 
-            if (State == NodeStates.Editing)
-                return;
+            if (ActiveLabel != null && IsLoggedIn_Control && ev.data! != null)
+                ProcessRepeat(new Repeat(ev.data.repeat, ActiveLabel));
 
-            RepeatBuffer.TryAdd(ev.data.repeat, new Repeat() { Number = ev.data.repeat });
-
-            if (IsLoggedIn_Control)
-                ProcessRepeat(ev.data.repeat);
+            ActiveLabel = null;
         }
         private void WebSocket_Heartbeat(Events_System? ev)
         {
@@ -702,11 +703,19 @@ namespace V275_REST_Lib
                         if (ev.data.token != LoginData.token)
                             _ = Logout();
         }
+        /// <summary>
+        /// A new image has been captured. After sim trigger or repeat image from slab.
+        /// </summary>
+        /// <param name="ev"></param>
         private void WebSocket_SetupCapture(Events_System ev)
         {
-            if (IsLoggedIn_Control)
-                if (RepeatBuffer.TryAdd(ev.data.repeat, new Repeat() { Number = ev.data.repeat }))
-                    ProcessRepeat(ev.data.repeat);
+            LogDebug($"SetupCapture: Controller State is? {State}: ActiveLabel is null? {ActiveLabel == null}: IsLoggedIn_Control? {IsLoggedIn_Control}: Event.Data is null? {ev.data == null}");
+
+            if (State != NodeStates.Editing)
+                return;
+
+            if (ActiveLabel != null && IsLoggedIn_Control && ev.data! != null)
+                ProcessLabel(ev.data.repeat, ActiveLabel, null);
         }
 
         private NodeStates GetState(string state)
@@ -774,29 +783,37 @@ namespace V275_REST_Lib
 
             return true;
         }
+        private async void ProcessRepeat(Repeat repeat)
+        {
+            repeat.FullReport = await GetFullReport(repeat.Number, true);
+
+            if(repeat.Label.RepeatAvailable != null)
+                repeat.Label.RepeatAvailable(repeat);
+        }
         public async Task<bool> Inspect(int repeat)
         {
             if (repeat > 0)
                 if (!(await Commands.SetRepeat(repeat)).OK)
                     return false;
 
-            LabelEnd = false;
+            //LabelEnd = false;
             if (!(await Commands.Inspect()).OK)
                 return false;
 
-            await Task.Run(() =>
-            {
-                DateTime start = DateTime.Now;
-                while (!LabelEnd)
-                    if ((DateTime.Now - start) > TimeSpan.FromMilliseconds(10000))
-                        return;
-            });
+            return true;
+            //await Task.Run(() =>
+            //{
+            //    DateTime start = DateTime.Now;
+            //    while (!LabelEnd)
+            //        if ((DateTime.Now - start) > TimeSpan.FromMilliseconds(10000))
+            //            return;
+            //});
 
-            return LabelEnd;
+            //return LabelEnd;
         }
 
 
-        public async Task<FullReport?> GetReport(int repeat, bool getImage)
+        public async Task<FullReport?> GetFullReport(int repeat, bool getImage)
         {
             FullReport report = new();
             if (State == NodeStates.Editing)
@@ -819,6 +836,9 @@ namespace V275_REST_Lib
                     //}
                 }
 
+            if (await UpdateJob())
+                report.Job = Job;
+
             return report;
         }
 
@@ -840,16 +860,7 @@ namespace V275_REST_Lib
             if (!(await Commands.Detect()).OK)
                 return false;
 
-            SetupDetectEnd = false;
-            await Task.Run(() =>
-            {
-                DateTime start = DateTime.Now;
-                while (!SetupDetectEnd)
-                    if ((DateTime.Now - start) > TimeSpan.FromMilliseconds(20000))
-                        return;
-            });
-
-            return SetupDetectEnd;
+            return true;
         }
 
         public async Task<bool> AddSector(string name, string json) => (await Commands.AddSector(name, json)).OK;
@@ -961,22 +972,23 @@ namespace V275_REST_Lib
 
         public async Task<bool> SimulatorTogglePrint()
         {
+            LabelStart = false;
+
             if (!(await Commands.SimulatorStart()).OK)
                 return false;
 
-            LabelBegin = false;
             await Task.Run(() =>
             {
                 DateTime start = DateTime.Now;
-                while (!LabelBegin)
+                while (!LabelStart)
                     if ((DateTime.Now - start) > TimeSpan.FromMilliseconds(10000))
                         return;
             });
 
-            return (await Commands.SimulatorStop()).OK && LabelBegin;
+            return (await Commands.SimulatorStop()).OK && LabelStart;
         }
 
-        public async Task<FullReport?> Read(int repeat, bool getImage)
+        public async Task<FullReport?> InspectGetReport(int repeat, bool getImage)
         {
             if (repeat == 0)
             {
@@ -989,7 +1001,7 @@ namespace V275_REST_Lib
                     return null;
 
             FullReport report;
-            if ((report = await GetReport(repeat, getImage)) == null)
+            if ((report = await GetFullReport(repeat, getImage)) == null)
                 return null;
 
             if ((report.Job = (await Commands.GetJob()).Object as Job) == null)
@@ -999,7 +1011,7 @@ namespace V275_REST_Lib
             {
                 if (!(await Commands.RemoveRepeat(repeat)).OK)
                     return null;
-               
+
                 if (!(await Commands.ResumeJob()).OK)
                     return null;
             }
@@ -1011,45 +1023,65 @@ namespace V275_REST_Lib
             return res == null ? 0 : res.Count > 0 ? res.First() : 0;
         }
 
-        #region V275 Image Results
 
-        private Label ActiveLabel { get; set; }
+        private Label? ActiveLabel { get; set; }
 
-        public async Task ProcessImage_Print(Label label)
+        public bool ProcessImage_Printer(Label label, int count, string printerName)
         {
             ActiveLabel = label;
 
-            LogWarning("No node selected.");
+            ProcessImage_Print(label.Image, count, printerName);
 
-            if (!IsSimulator && State != NodeStates.Idle && IsLoggedIn_Control)
-                await TogglePrint(true);
-
+            return true;
         }
-        public async Task ProcessImage_Simulator(Label label)
+        public async Task<bool> ProcessImage_Simulator(Label label)
         {
             ActiveLabel = label;
 
             if (!Host.Equals("127.0.0.1"))
-                ProcessImage_API();
+                return await ProcessImage_API();
             else
             {
-                ProcessImage_FileSystem();
+                if(!ProcessImage_FileSystem())
+                    return false;
 
                 if (!IsLoggedIn_Control)
                 {
                     if (!(await Commands.SimulationTrigger()).OK)
+                    {
                         LogError("Error triggering the simulator.");
+                        return false;
+                    }
                 }
+                else
+                {
+                    if(!await SimulatorTogglePrint())
+                    {
+                        LogError("Error triggering the simulator.");
+                        return false;
+                    }
+                }
+
+                return true;
             }
         }
 
-        private async void ProcessImage_API()
-        {
 
+        private void ProcessImage_Print(byte[] image, int count, string printerName) => Task.Run(async () =>
+        {
+            Printer.Controller printer = new();
+            printer.Print(image, count, printerName, "");
+
+            if (IsLoggedIn_Control)
+                await TogglePrint(true);
+        });
+
+        private async Task<bool> ProcessImage_API()
+        {
             if (ActiveLabel == null)
             {
                 LogError($"The image is null.");
-                return;
+                return false;
             }
 
             if (!(await Commands.SimulationTriggerImage(
@@ -1060,10 +1092,12 @@ namespace V275_REST_Lib
                 })).OK)
             {
                 LogError("Error triggering the simulator.");
-                return;
+                return false;
             }
+
+            return true;
         }
-        private void ProcessImage_FileSystem()
+        private bool ProcessImage_FileSystem()
         {
             try
             {
@@ -1086,7 +1120,7 @@ namespace V275_REST_Lib
                     if (verRes > 0)
                     {
                         LogError("Could not delete all simulator images.");
-                        return;
+                        return false;
                     }
                     else
                     {
@@ -1112,20 +1146,35 @@ namespace V275_REST_Lib
                 if (!sim.SaveImage(prepend + "simulatorImage", ActiveLabel.Image))
                 {
                     LogError("Could not copy the image to the simulator images directory.");
-                    return;
+                    return false;
                 }
+
+                return true;
 
             }
             catch (Exception ex)
             {
                 LogError(ex.Message);
+                return false;
             }
         }
 
-        private async void ProcessRepeat(int repeat)
+        private async void ProcessLabel(int repeat, Label? label, Events_System? ev)
         {
-            if (ActiveLabel.Sectors != null)
+            if (label == null)
             {
+                LogError("The label is null.");
+                return;
+            }
+
+            if(ev == null)
+            {  
+                if (repeat == 0)
+                {
+                    var lst = State == NodeStates.Running ? (await Commands.GetRepeatsAvailableRun()).Object as List<int> : (await Commands.GetRepeatsAvailable()).Object as List<int>;
+                    repeat = lst == null ? 0 : lst.Count > 0 ? lst.First() : 0;
+                }
+
                 if (repeat > 0)
                     if (!(await Commands.SetRepeat(repeat)).OK)
                     {
@@ -1133,29 +1182,66 @@ namespace V275_REST_Lib
                         return;
                     }
 
-                var res = await RetoreSectors(ActiveLabel.Sectors);
+                var res = await RetoreSectors(label.Sectors);
 
-                if (res == RestoreSectorsResults.Failure)
+                if (res != RestoreSectorsResults.Success)
                     return;
+            }
+            else
+            {
+                List<Sector_New_Verify> sectors = CreateSectors(ev, GetTableID(ActiveLabel.Table), Symbologies);
 
-                if (res == RestoreSectorsResults.Detect)
-                {
-                    List<Sector_New_Verify> sectors = CreateSectors(SetupDetectEvent, V275GetTableID(ActiveLabel.Table), Symbologies);
+                LogInfo("Creating sectors.");
 
-                    LogInfo("Restoring sectors.");
-
-                    foreach (Sector_New_Verify sec in sectors)
-                        if (!await AddSector(sec.name, JsonConvert.SerializeObject(sec)))
-                            return;
-                }
+                foreach (Sector_New_Verify sec in sectors)
+                    if (!await AddSector(sec.name, JsonConvert.SerializeObject(sec)))
+                        return;
             }
 
-            LogInfo("Reading results and Image.");
-            if (!await ReadTask(repeat))
+            if (!await Inspect(repeat))
+            {
+                LogError("Error inspecting the repeat.");
                 return;
+            }
+        }
+        private async Task<RestoreSectorsResults> RetoreSectors(List<Job.Sector>? sectors)
+        {
+            if (sectors == null)
+                return RestoreSectorsResults.Success;
+
+            if (!await DeleteSectors())
+                return RestoreSectorsResults.Failure;
+
+            if (sectors.Count == 0)
+                return !await DetectSectors() ? RestoreSectorsResults.Failure : RestoreSectorsResults.Detect;
+
+            foreach (var sec in sectors)
+            {
+                if (!await AddSector(sec.name, JsonConvert.SerializeObject(sec)))
+                    return RestoreSectorsResults.Failure;
+
+                if (sec.blemishMask?.layers != null)
+                    foreach (Job.Layer layer in sec.blemishMask.layers)
+
+                        if (!await AddMask(sec.name, JsonConvert.SerializeObject(layer)))
+                            if (layer.value != 0)
+                                return RestoreSectorsResults.Failure;
+            }
+
+            return RestoreSectorsResults.Success;
+        }
+        public async Task<bool> ReadTask(Repeat repeat)
+        {
+            if ((repeat.FullReport = await GetFullReport(repeat.Number, true)) == null)
+            {
+                LogError("Unable to read the repeat report from the node.");
+                return false;
+            }
+
+            return true;
         }
 
-        private string V275GetTableID(GS1TableNames gS1TableTypes)
+        private string GetTableID(GS1TableNames gS1TableTypes)
             => gS1TableTypes switch
             {
                 GS1TableNames._1 => "1",
@@ -1177,59 +1263,6 @@ namespace V275_REST_Lib
                 GS1TableNames._12_3 => "12.3",
                 _ => "",
             };
-
-        //private void ProcessRepeatFault(int repeat) => TempRepeats.Clear();
-
-        public enum RestoreSectorsResults
-        {
-            Success = 1,
-            Detect = 2,
-            Failure = -1
-        }
-
-        private async Task<RestoreSectorsResults> RetoreSectors(List<Job.Sector> sectors)
-        {
-            if (!await DeleteSectors())
-                return RestoreSectorsResults.Failure;
-
-            if (sectors.Count == 0)
-                return !await DetectSectors() ? RestoreSectorsResults.Failure : RestoreSectorsResults.Detect;
-
-            foreach (var sec in sectors)
-            {
-                if (!await AddSector(sec.name, JsonConvert.SerializeObject(sec)))
-                    return RestoreSectorsResults.Failure;
-
-                if (sec.blemishMask?.layers != null)
-                    foreach (Job.Layer layer in sec.blemishMask.layers)
-                        if (!await AddMask(sec.name, JsonConvert.SerializeObject(layer)))
-                            if (layer.value != 0)
-                                return RestoreSectorsResults.Failure;
-            }
-
-            return RestoreSectorsResults.Success;
-        }
-
-        public async Task<bool> ReadTask(int repeat)
-        {
-            FullReport report;
-            if ((report = await Read(repeat, true)) == null)
-            {
-                LogError("Unable to read the repeat report from the node.");
-                return false;
-            }
-
-            if (RepeatBuffer.TryGetValue(repeat, out Repeat rep))
-            {
-                rep.FullReport = report;
-                return true;
-            }
-
-            LogError("Unable to find the repeat in the buffer.");
-            return false;
-        }
-
-        #endregion
 
         #region Logging
         private readonly Logger logger = new();
