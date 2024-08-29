@@ -815,6 +815,9 @@ namespace V275_REST_Lib
 
         public async Task<FullReport?> GetFullReport(int repeat, bool getImage)
         {
+            if (repeat == 0)
+                repeat = await GetLatestRepeatNumber();
+
             FullReport report = new();
             if (State == NodeStates.Editing)
             {
@@ -1023,6 +1026,11 @@ namespace V275_REST_Lib
             return res == null ? 0 : res.Count > 0 ? res.First() : 0;
         }
 
+        public async Task<int> GetLatestRepeatNumber()
+        {
+            var lst = State == NodeStates.Running ? (await Commands.GetRepeatsAvailableRun()).Object as List<int> : (await Commands.GetRepeatsAvailable()).Object as List<int>;
+            return lst == null ? 0 : lst.Count > 0 ? lst.First() : 0;
+        }
 
         private Label? ActiveLabel { get; set; }
 
@@ -1170,11 +1178,8 @@ namespace V275_REST_Lib
             if(ev == null)
             {  
                 if (repeat == 0)
-                {
-                    var lst = State == NodeStates.Running ? (await Commands.GetRepeatsAvailableRun()).Object as List<int> : (await Commands.GetRepeatsAvailable()).Object as List<int>;
-                    repeat = lst == null ? 0 : lst.Count > 0 ? lst.First() : 0;
-                }
-
+                    repeat = await GetLatestRepeatNumber();
+                
                 if (repeat > 0)
                     if (!(await Commands.SetRepeat(repeat)).OK)
                     {
@@ -1240,6 +1245,7 @@ namespace V275_REST_Lib
 
             return true;
         }
+
 
         private string GetTableID(GS1TableNames gS1TableTypes)
             => gS1TableTypes switch
