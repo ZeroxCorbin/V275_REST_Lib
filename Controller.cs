@@ -653,7 +653,7 @@ namespace V275_REST_Lib
             LogDebug($"LabelEnd: Controller State is? {State}: ActiveLabel is null? {ActiveLabel == null}: IsLoggedIn_Control? {IsLoggedIn_Control}: Event.Data is null? {ev.data == null}");
 
             if (ActiveLabel != null && IsLoggedIn_Control && ev.data! != null)
-                ProcessRepeat(new Repeat(ev.data.repeat, ActiveLabel));
+                RepeatAvailableCallBack(new Repeat(ev.data.repeat, ActiveLabel));
 
             ActiveLabel = null;
         }
@@ -771,7 +771,7 @@ namespace V275_REST_Lib
         }
         public async Task<bool> RemoveRepeat()
         {
-            var repeat = await GetLatestRepeat();
+            var repeat = await GetLatestRepeatNumber();
             if (repeat == -9999)
                 return true;
 
@@ -783,13 +783,7 @@ namespace V275_REST_Lib
 
             return true;
         }
-        private async void ProcessRepeat(Repeat repeat)
-        {
-            repeat.FullReport = await GetFullReport(repeat.Number, true);
 
-            if(repeat.Label.RepeatAvailable != null)
-                repeat.Label.RepeatAvailable(repeat);
-        }
         public async Task<bool> Inspect(int repeat)
         {
             if (repeat > 0)
@@ -811,7 +805,6 @@ namespace V275_REST_Lib
 
             //return LabelEnd;
         }
-
 
         public async Task<FullReport?> GetFullReport(int repeat, bool getImage)
         {
@@ -869,54 +862,6 @@ namespace V275_REST_Lib
         public async Task<bool> AddSector(string name, string json) => (await Commands.AddSector(name, json)).OK;
         public async Task<bool> AddMask(string name, string json) => (await Commands.AddMask(name, json)).OK;
 
-        public List<Sector_New_Verify> CreateSectors(Events_System ev, string tableID, List<Symbologies.Symbol> symbologies)
-        {
-            int d1 = 1, d2 = 1;
-            List<Sector_New_Verify> lst = new List<Sector_New_Verify>();
-
-            if (ev?.data != null && ev.data.detections != null)
-                foreach (var val in ev.data.detections)
-                {
-                    if (val.region == null)
-                        continue;
-
-                    Symbologies.Symbol sym = symbologies.Find((e) => e.symbology == val.symbology);
-
-                    if (sym == null)
-                        continue;
-
-                    Sector_New_Verify verify = new Sector_New_Verify();
-
-                    if (!string.IsNullOrEmpty(tableID))
-                    {
-                        verify.gradingStandard.enabled = true;
-                        verify.gradingStandard.tableId = tableID;
-                    }
-                    else
-                    {
-                        verify.gradingStandard.enabled = false;
-                        verify.gradingStandard.tableId = "1";
-                    }
-
-                    verify.id = sym.regionType == "verify1D" ? d1++ : d2++;
-
-                    verify.type = sym.regionType;
-                    verify.symbology = val.symbology;
-                    verify.name = $"{sym.regionType}_{verify.id}";
-                    verify.username = $"{char.ToUpper(verify.name[0])}{verify.name.Substring(1)}";
-
-                    verify.top = val.region.y;
-                    verify.left = val.region.x;
-                    verify.height = val.region.height;
-                    verify.width = val.region.width;
-
-                    verify.orientation = val.orientation;
-
-                    lst.Add(verify);
-                }
-
-            return lst;
-        }
 
         public async Task<bool> SwitchToEdit()
         {
@@ -1020,21 +965,14 @@ namespace V275_REST_Lib
             }
             return report;
         }
-        public async Task<int> GetLatestRepeat()
+        public async Task<int> GetLatestRepeatNumber()
         {
             var res = State == NodeStates.Running ? (await Commands.GetRepeatsAvailableRun()).Object as List<int> : (await Commands.GetRepeatsAvailable()).Object as List<int>;
             return res == null ? 0 : res.Count > 0 ? res.First() : 0;
         }
-
-        public async Task<int> GetLatestRepeatNumber()
-        {
-            var lst = State == NodeStates.Running ? (await Commands.GetRepeatsAvailableRun()).Object as List<int> : (await Commands.GetRepeatsAvailable()).Object as List<int>;
-            return lst == null ? 0 : lst.Count > 0 ? lst.First() : 0;
-        }
-
         private Label? ActiveLabel { get; set; }
 
-        public bool ProcessImage_Printer(Label label, int count, string printerName)
+        public bool ProcessLabel_Printer(Label label, int count, string printerName)
         {
             ActiveLabel = label;
 
@@ -1042,7 +980,7 @@ namespace V275_REST_Lib
 
             return true;
         }
-        public async Task<bool> ProcessImage_Simulator(Label label)
+        public async Task<bool> ProcessLabel_Simulator(Label label)
         {
             ActiveLabel = label;
 
@@ -1074,7 +1012,6 @@ namespace V275_REST_Lib
             }
         }
 
-
         private void ProcessImage_Print(byte[] image, int count, string printerName) => Task.Run(async () =>
         {
             Printer.Controller printer = new();
@@ -1083,7 +1020,6 @@ namespace V275_REST_Lib
             if (IsLoggedIn_Control)
                 await TogglePrint(true);
         });
-
         private async Task<bool> ProcessImage_API()
         {
             if (ActiveLabel == null)
@@ -1235,6 +1171,63 @@ namespace V275_REST_Lib
 
             return RestoreSectorsResults.Success;
         }
+        private async void RepeatAvailableCallBack(Repeat repeat)
+        {
+            repeat.FullReport = await GetFullReport(repeat.Number, true);
+
+            if (repeat.Label.RepeatAvailable != null)
+                repeat.Label.RepeatAvailable(repeat);
+        }
+
+        public List<Sector_New_Verify> CreateSectors(Events_System ev, string tableID, List<Symbologies.Symbol> symbologies)
+        {
+            int d1 = 1, d2 = 1;
+            List<Sector_New_Verify> lst = new List<Sector_New_Verify>();
+
+            if (ev?.data != null && ev.data.detections != null)
+                foreach (var val in ev.data.detections)
+                {
+                    if (val.region == null)
+                        continue;
+
+                    Symbologies.Symbol sym = symbologies.Find((e) => e.symbology == val.symbology);
+
+                    if (sym == null)
+                        continue;
+
+                    Sector_New_Verify verify = new Sector_New_Verify();
+
+                    if (!string.IsNullOrEmpty(tableID))
+                    {
+                        verify.gradingStandard.enabled = true;
+                        verify.gradingStandard.tableId = tableID;
+                    }
+                    else
+                    {
+                        verify.gradingStandard.enabled = false;
+                        verify.gradingStandard.tableId = "1";
+                    }
+
+                    verify.id = sym.regionType == "verify1D" ? d1++ : d2++;
+
+                    verify.type = sym.regionType;
+                    verify.symbology = val.symbology;
+                    verify.name = $"{sym.regionType}_{verify.id}";
+                    verify.username = $"{char.ToUpper(verify.name[0])}{verify.name.Substring(1)}";
+
+                    verify.top = val.region.y;
+                    verify.left = val.region.x;
+                    verify.height = val.region.height;
+                    verify.width = val.region.width;
+
+                    verify.orientation = val.orientation;
+
+                    lst.Add(verify);
+                }
+
+            return lst;
+        }
+
         public async Task<bool> ReadTask(Repeat repeat)
         {
             if ((repeat.FullReport = await GetFullReport(repeat.Number, true)) == null)
