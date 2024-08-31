@@ -218,9 +218,7 @@ namespace V275_REST_Lib
 
             WebSocket.MessageRecieved += WebSocketEvents_MessageRecieved;
         }
-        public void Initialize() => LoadBase();
-
-        private void LoadBase()
+        public void Initialize()
         {
             Task.Run(async () =>
             {
@@ -229,6 +227,7 @@ namespace V275_REST_Lib
                 await UpdateProduct();
             }).Wait();
         }
+
         public async Task Login(bool monitor)
         {
             if (IsLoggedIn)

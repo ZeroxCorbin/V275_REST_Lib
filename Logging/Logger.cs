@@ -20,7 +20,7 @@ public class Logger : ILogger
     {
         var logger = GetLogger(sourceType);
         logger.Debug(message);
-        _ = Messenger.Send(new Messages.LoggerMessage(message, Messages.LoggerMessageTypes.Debug));
+        var res = Messenger.Send(new Messages.LoggerMessage(message, Messages.LoggerMessageTypes.Debug));
     }
 
     public void LogWarning(Type sourceType, string message)
