@@ -34,7 +34,7 @@ namespace V275_REST_Lib
         public URLs URLs { get; } = new URLs();
 
         private Connection Connection { get; } = new Connection();
-        private string Token { get; set; } = string.Empty;
+        public string Token { get; set; } = string.Empty;
 
         public async Task<Results> Login(string user, string pass, bool monitor, bool temporary = false)
         {
