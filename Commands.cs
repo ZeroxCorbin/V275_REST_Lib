@@ -1,9 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 using V275_REST_Lib.Logging;
 using V275_REST_Lib.Models;
@@ -12,159 +10,31 @@ namespace V275_REST_Lib
 {
     public class Results
     {
-        //Json and Object are OK
+        /// <summary>
+        /// The HTTP request was successful and the JSON response was deserialized.
+        /// </summary>
         public bool OK { get; set; } = false;
+        /// <summary>
+        /// If there is a JSON response, it will be stored here.
+        /// </summary>
         public string Json { get; set; } = string.Empty;
+        /// <summary>
+        /// This is the response from the request. This could be a string, byte[], or object (T) depending on the request method.
+        /// If there is a JSON response, it will be deserialized into this object.
+        /// </summary>
         public object? Object { get; set; }
+        /// <summary>
+        /// The HttpResponseMessage from the request.
+        /// </summary>
         public HttpResponseMessage? HttpResponseMessage { get; set; }
     }
 
     public class Commands
     {
-        public Connection Connection { get; } = new Connection();
         public URLs URLs { get; } = new URLs();
-        public string Token { get; private set; } = string.Empty;
 
-        private bool CheckResults()
-        {
-            if (Connection.IsException)
-            {
-                if (Connection.Exception != null)
-                    LogError(Connection.Exception);
-                return false;
-            }
-            else if (Connection.HttpResponseMessage != null && !Connection.HttpResponseMessage.IsSuccessStatusCode)
-            {
-                LogWarning($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
-                return false;
-            }
-            return true;
-        }
-        private Results CheckResults(byte[] data)
-        {
-            Results results = new()
-            {
-                HttpResponseMessage = Connection.HttpResponseMessage
-            };
-
-            if (Connection.IsException)
-            {
-                if (Connection.Exception != null)
-                    LogError(Connection.Exception);
-                results.Object = data;
-                return results;
-            }
-            else if (Connection.HttpResponseMessage != null && !Connection.HttpResponseMessage.IsSuccessStatusCode)
-            {
-                LogWarning($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
-                results.Object = data;
-                return results;
-            }
-
-            if (data != null)
-            {
-                results.OK = true;
-                results.Object = data;
-            }
-
-            return results;
-        }
-        private Results CheckResults(string data)
-        {
-            Results results = new()
-            {
-                HttpResponseMessage = Connection.HttpResponseMessage
-            };
-
-            if (Connection.IsException)
-            {
-                if (Connection.Exception != null)
-                    LogError(Connection.Exception);
-                results.Object = data;
-                return results;
-            }
-            else if (Connection.HttpResponseMessage != null && !Connection.HttpResponseMessage.IsSuccessStatusCode)
-            {
-                LogWarning($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
-                results.Object = data;
-                return results;
-            }
-
-            if (data != null)
-            {
-                results.OK = true;
-                results.Object = data;
-            }
-
-            return results;
-        }
-        private Results CheckResults(bool data)
-        {
-            Results results = new()
-            {
-                HttpResponseMessage = Connection.HttpResponseMessage
-            };
-
-            if (Connection.IsException)
-            {
-                if (Connection.Exception != null)
-                    LogError(Connection.Exception);
-                results.Object = data;
-                return results;
-            }
-            else if (Connection.HttpResponseMessage != null && !Connection.HttpResponseMessage.IsSuccessStatusCode)
-            {
-                LogWarning($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
-                results.Object = data;
-                return results;
-            }
-
-            results.OK = data;
-            var tsk = Connection.HttpResponseMessage?.Content.ReadAsStringAsync();
-            if (tsk != null && tsk.Wait(1000))
-                results.Object = tsk.Result;
-
-            return results;
-        }
-        private Results CheckResults<T>(string json)
-        {
-            Results results = new()
-            {
-                HttpResponseMessage = Connection.HttpResponseMessage
-            };
-
-            if (Connection.IsException)
-            {
-                if (Connection.Exception != null)
-                    LogError(Connection.Exception);
-                results.Object = json;
-                return results;
-            }
-            else if (Connection.HttpResponseMessage != null && !Connection.HttpResponseMessage.IsSuccessStatusCode)
-            {
-                LogError($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
-                results.Object = json;
-                return results;
-            }
-
-            if (!string.IsNullOrEmpty(json))
-                results.Json = json;
-            else
-                return results;
-
-            try
-            {
-                results.Object = JsonConvert.DeserializeObject<T>(results.Json);
-                results.OK = true;
-            }
-            catch (Exception ex)
-            {
-                LogError(ex);
-                results.Object = null;
-            }
-
-            return results;
-        }
+        private Connection Connection { get; } = new Connection();
+        private string Token { get; set; } = string.Empty;
 
         public async Task<Results> Login(string user, string pass, bool monitor, bool temporary = false)
         {
@@ -239,7 +109,179 @@ namespace V275_REST_Lib
         public async Task<Results> SetRepeat(int repeat) => CheckResults(await Connection.Put(URLs.History(repeat.ToString()), string.Empty, Token));
         public async Task<Results> PutCameraCommand(string cmd) => CheckResults(await Connection.Put(URLs.CameraCommand(), cmd, Token));
 
+        #region Results Checking
+
+        /// <summary>
+        /// Check the HttpResponseMessage for success.
+        /// Used for Login.
+        /// </summary>
+        /// <returns></returns>
+        private bool CheckResults()
+        {
+            if (Connection.IsException)
+            {
+                if (Connection.Exception != null)
+                    LogError(Connection.Exception);
+                return false;
+            }
+            else if (Connection.HttpResponseMessage != null && !Connection.HttpResponseMessage.IsSuccessStatusCode)
+            {
+                LogWarning($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
+                return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Check the HttpResponseMessage for success and attempt to deserialze the JSON into a new object (T).
+        /// This is used for GET requests that return JSON.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="json"></param>
+        /// <returns></returns>
+        private Results CheckResults<T>(string json)
+        {
+            Results results = new()
+            {
+                HttpResponseMessage = Connection.HttpResponseMessage
+            };
+
+            if (Connection.IsException)
+            {
+                if (Connection.Exception != null)
+                    LogError(Connection.Exception);
+                results.Object = json;
+                return results;
+            }
+            else if (Connection.HttpResponseMessage != null && !Connection.HttpResponseMessage.IsSuccessStatusCode)
+            {
+                LogError($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
+                results.Object = json;
+                return results;
+            }
+
+            if (!string.IsNullOrEmpty(json))
+                results.Json = json;
+            else
+                return results;
+
+            try
+            {
+                results.Object = JsonConvert.DeserializeObject<T>(results.Json);
+                results.OK = true;
+            }
+            catch (Exception ex)
+            {
+                LogError(ex);
+                results.Object = null;
+            }
+
+            return results;
+        }
+
+        /// <summary>
+        /// Check the HttpResponseMessage for success and return the string.
+        /// This is used for GET requests that return a string that it is not JSON or 
+        /// if it is JSON, it should not be deserialized.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        private Results CheckResults(string data)
+        {
+            Results results = new()
+            {
+                HttpResponseMessage = Connection.HttpResponseMessage,
+                Object = data
+            };
+
+            if (Connection.IsException)
+            {
+                if (Connection.Exception != null)
+                    LogError(Connection.Exception);
+                else
+                    LogError("Unknown Connection Exception");
+
+                return results;
+            }
+            else if (Connection.HttpResponseMessage != null && !Connection.HttpResponseMessage.IsSuccessStatusCode)
+            {
+                LogWarning($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
+                return results;
+            }
+
+            if (data != null)
+                results.OK = true;
+
+            return results;
+        }
+
+        /// <summary>
+        /// Check the HttpResponseMessage for success and return the byte[] data.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        private Results CheckResults(byte[] data)
+        {
+            Results results = new()
+            {
+                HttpResponseMessage = Connection.HttpResponseMessage,
+                Object = data
+            };
+
+            if (Connection.IsException)
+            {
+                if (Connection.Exception != null)
+                    LogError(Connection.Exception);
+                return results;
+            }
+            else if (Connection.HttpResponseMessage != null && !Connection.HttpResponseMessage.IsSuccessStatusCode)
+            {
+                LogWarning($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
+                return results;
+            }
+
+            if (data != null)
+                results.OK = true;
+
+            return results;
+        }
+
+        /// <summary>
+        /// Check the HttpResponseMessage for success and return the Content (BODY) of the message.
+        /// This is mainly used for PUT requests.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        private Results CheckResults(bool data)
+        {
+            Results results = new()
+            {
+                HttpResponseMessage = Connection.HttpResponseMessage
+            };
+
+            if (Connection.IsException)
+            {
+                if (Connection.Exception != null)
+                    LogError(Connection.Exception);
+                return results;
+            }
+            else if (Connection.HttpResponseMessage != null && !Connection.HttpResponseMessage.IsSuccessStatusCode)
+            {
+                LogWarning($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
+                return results;
+            }
+
+            results.OK = data;
+            var tsk = Connection.HttpResponseMessage?.Content.ReadAsStringAsync();
+            if (tsk != null && tsk.Wait(1000))
+                results.Object = tsk.Result;
+
+            return results;
+        }
+        #endregion
+
         #region Logging
+
         private readonly Logger logger = new();
         public void LogInfo(string message) => logger.LogInfo(this.GetType(), message);
         public void LogDebug(string message) => logger.LogDebug(this.GetType(), message);
