@@ -27,6 +27,7 @@ namespace V275_REST_Lib
         /// The HttpResponseMessage from the request.
         /// </summary>
         public HttpResponseMessage? HttpResponseMessage { get; set; }
+        
     }
 
     public class Commands
