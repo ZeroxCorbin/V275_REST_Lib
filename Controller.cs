@@ -68,6 +68,7 @@ namespace V275_REST_Lib
     [JsonObject(MemberSerialization.OptIn)]
     public partial class Controller : ObservableObject
     {
+        public const double InchesPerMeter = 39.3701;
         public enum RestoreSectorsResults
         {
             Success = 1,
@@ -823,12 +824,9 @@ namespace V275_REST_Lib
             }
 
             if (getImage)
-                if ((report.Image = (await Commands.GetRepeatsImage(repeat)).Object as byte[]) == null)
+                if ((report.Image = (await Commands.GetRepeatsImage(repeat)).Object as byte[]) != null)
                 {
-                    //if (!Commands.Status.StartsWith("Gone"))
-                    //{
-                    //    return null;
-                    //}
+                    report.Image = AddDPIToBitmap(report.Image, Dpi);
                 }
 
             if (await UpdateJob())
@@ -836,6 +834,21 @@ namespace V275_REST_Lib
 
             return report;
         }
+        private byte[] AddDPIToBitmap(byte[] image, int dpi)
+        {
+            int dpiXInMeters = Dpi2Dpm(dpi);
+            int dpiYInMeters = Dpi2Dpm(dpi);
+            // Set the horizontal DPI
+            for (int i = 38; i < 42; i++)
+                image[i] = BitConverter.GetBytes(dpiXInMeters)[i - 38];
+            // Set the vertical DPI
+            for (int i = 42; i < 46; i++)
+                image[i] = BitConverter.GetBytes(dpiYInMeters)[i - 42];
+            return image;
+        }
+
+        public static int Dpi2Dpm(int dpi) => (int)Math.Round(dpi * InchesPerMeter);
+
 
         public async Task<bool> DeleteSectors()
         {
@@ -1261,6 +1274,7 @@ namespace V275_REST_Lib
                 GS1TableNames._12_3 => "12.3",
                 _ => "",
             };
+
 
         #region Logging
         private readonly Logger logger = new();
