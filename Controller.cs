@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using Logging.lib;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Concurrent;
@@ -222,28 +223,28 @@ public partial class Controller : ObservableObject
     {
         if (IsLoggedIn)
         {
-            LogDebug($"Logging out. {UserName} @ {Host}:{SystemPort}");
+            Logger.LogDebug($"Logging out. {UserName} @ {Host}:{SystemPort}");
             await Logout();
             return;
         }
 
         if (!PreLogin())
         {
-            LogDebug($"Pre-Log in FAILED. {UserName} @ {Host}:{SystemPort}");
+            Logger.LogDebug($"Pre-Log in FAILED. {UserName} @ {Host}:{SystemPort}");
             return;
         }
 
-        LogDebug($"Logging in. {UserName} @ {Host}:{SystemPort}");
+        Logger.LogDebug($"Logging in. {UserName} @ {Host}:{SystemPort}");
 
         if ((await Commands.Login(UserName, Password, monitor)).OK)
         {
-            LogDebug($"Logged in. {(monitor ? "Monitor" : "Control")} {UserName} @ {Host}:{SystemPort}");
+            Logger.LogDebug($"Logged in. {(monitor ? "Monitor" : "Control")} {UserName} @ {Host}:{SystemPort}");
 
             PostLogin(monitor);
         }
         else
         {
-            LogError($"Login FAILED. {UserName} @ {Host}:{SystemPort}");
+            Logger.LogError($"Login FAILED. {UserName} @ {Host}:{SystemPort}");
 
             IsLoggedIn_Control = false;
             IsLoggedIn_Monitor = false;
@@ -262,14 +263,14 @@ public partial class Controller : ObservableObject
                 }
                 catch (Exception ex)
                 {
-                    LogError(ex);
+                    Logger.LogError(ex);
                     return false;
                 }
                 return true;
             }
             else
             {
-                LogError($"Invalid Simulation Images Directory: '{SimulatorImageDirectory}'");
+                Logger.LogError($"Invalid Simulation Images Directory: '{SimulatorImageDirectory}'");
                 return false;
             }
         }
@@ -463,7 +464,7 @@ public partial class Controller : ObservableObject
                         if ((await Commands.GetMask(sector.name)).Object is Job.Mask mask)
                             sector.blemishMask = mask;
                         else
-                            LogWarning($"Failed to get mask for sector {sector.name}");
+                            Logger.LogWarning($"Failed to get mask for sector {sector.name}");
                     }
                 }
         }
@@ -575,47 +576,47 @@ public partial class Controller : ObservableObject
                 WebSocket_Heartbeat(ev);
                 break;
             case "setupCapture":
-                LogDebug($"WSE: setupCapture {ev.source}; {ev.name}");
+                Logger.LogDebug($"WSE: setupCapture {ev.source}; {ev.name}");
                 WebSocket_SetupCapture(ev);
                 break;
             case "setupDetectBegin":
-                LogDebug($"WSE: setupDetectBegin {ev.source}; {ev.name}");
+                Logger.LogDebug($"WSE: setupDetectBegin {ev.source}; {ev.name}");
                 //WebSocket_SetupDetect(ev, false);
                 break;
             case "setupDetectStart":
-                LogDebug($"WSE: setupDetectStart {ev.source}; {ev.name}");
+                Logger.LogDebug($"WSE: setupDetectStart {ev.source}; {ev.name}");
                 break;
             case "setupDetect":
-                LogDebug($"WSE: setupDetect {ev.source}; {ev.name}");
+                Logger.LogDebug($"WSE: setupDetect {ev.source}; {ev.name}");
                 break;
             case "setupDetectEnd":
-                LogDebug($"WSE: setupDetectEnd {ev.source}; {ev.name}");
+                Logger.LogDebug($"WSE: setupDetectEnd {ev.source}; {ev.name}");
                 WebSocket_SetupDetectEnd(ev);
                 break;
             case "stateChange":
-                LogDebug($"WSE: stateChange : {ev.source}; {ev.name}");
+                Logger.LogDebug($"WSE: stateChange : {ev.source}; {ev.name}");
                 WebSocket_StateChange(ev);
                 break;
             case "sessionStateChange":
-                LogDebug($"WSE: sessionStateChange {ev.source}; {ev.name}");
+                Logger.LogDebug($"WSE: sessionStateChange {ev.source}; {ev.name}");
                 WebSocket_SessionStateChange(ev);
                 break;
             case "labelBegin":
-                LogDebug($"WSE: labelBegin {ev.source}; {ev.name}");
+                Logger.LogDebug($"WSE: labelBegin {ev.source}; {ev.name}");
                 WebSocket_LabelStart(ev);
                 break;
             case "labelEnd":
-                LogDebug($"WSE: labelEnd {ev.source}; {ev.name}");
+                Logger.LogDebug($"WSE: labelEnd {ev.source}; {ev.name}");
                 WebSocket_LabelEnd(ev);
                 break;
             case "sectorBegin":
-                LogDebug($"WSE: sectorBegin {ev.source}; {ev.name}");
+                Logger.LogDebug($"WSE: sectorBegin {ev.source}; {ev.name}");
                 break;
             case "sectorEnd":
-                LogDebug($"WSE: sectorEnd {ev.source}; {ev.name}");
+                Logger.LogDebug($"WSE: sectorEnd {ev.source}; {ev.name}");
                 break;
             default:
-                LogWarning($"Unknown event type: {ev.name}");
+                Logger.LogWarning($"Unknown event type: {ev.name}");
                 break;
         }
     }
@@ -628,7 +629,7 @@ public partial class Controller : ObservableObject
     /// <param name="end"></param>
     private void WebSocket_SetupDetectEnd(Models.Events_System ev)
     {
-        LogDebug($"SetupDetect: Controller State is? {State}: ActiveLabel is null? {ActiveLabel == null}: IsLoggedIn_Control? {IsLoggedIn_Control}: Event.Data is null? {ev.data == null}");
+        Logger.LogDebug($"SetupDetect: Controller State is? {State}: ActiveLabel is null? {ActiveLabel == null}: IsLoggedIn_Control? {IsLoggedIn_Control}: Event.Data is null? {ev.data == null}");
 
         if (State != NodeStates.Editing)
             return;
@@ -639,7 +640,7 @@ public partial class Controller : ObservableObject
     private void WebSocket_LabelStart(Events_System ev) => LabelStart = true;
     private void WebSocket_LabelEnd(Models.Events_System ev)
     {
-        LogDebug($"LabelEnd: Controller State is? {State}: ActiveLabel is null? {ActiveLabel == null}: IsLoggedIn_Control? {IsLoggedIn_Control}: Event.Data is null? {ev.data == null}");
+        Logger.LogDebug($"LabelEnd: Controller State is? {State}: ActiveLabel is null? {ActiveLabel == null}: IsLoggedIn_Control? {IsLoggedIn_Control}: Event.Data is null? {ev.data == null}");
 
         if (ActiveLabel != null && IsLoggedIn_Control && ev.data! != null)
             RepeatAvailableCallBack(new Repeat(ev.data.repeat, ActiveLabel));
@@ -698,7 +699,7 @@ public partial class Controller : ObservableObject
     /// <param name="ev"></param>
     private void WebSocket_SetupCapture(Events_System ev)
     {
-        LogDebug($"SetupCapture: Controller State is? {State}: ActiveLabel is null? {ActiveLabel == null}: IsLoggedIn_Control? {IsLoggedIn_Control}: Event.Data is null? {ev.data == null}");
+        Logger.LogDebug($"SetupCapture: Controller State is? {State}: ActiveLabel is null? {ActiveLabel == null}: IsLoggedIn_Control? {IsLoggedIn_Control}: Event.Data is null? {ev.data == null}");
 
         if (State != NodeStates.Editing)
             return;
@@ -982,7 +983,7 @@ public partial class Controller : ObservableObject
             {
                 if (!(await Commands.SimulationTrigger()).OK)
                 {
-                    LogError("Error triggering the simulator.");
+                    Logger.LogError("Error triggering the simulator.");
                     return false;
                 }
             }
@@ -990,7 +991,7 @@ public partial class Controller : ObservableObject
             {
                 if (!await SimulatorTogglePrint())
                 {
-                    LogError("Error triggering the simulator.");
+                    Logger.LogError("Error triggering the simulator.");
                     return false;
                 }
             }
@@ -1011,7 +1012,7 @@ public partial class Controller : ObservableObject
     {
         if (ActiveLabel == null)
         {
-            LogError($"The image is null.");
+            Logger.LogError($"The image is null.");
             return false;
         }
 
@@ -1022,7 +1023,7 @@ public partial class Controller : ObservableObject
                 dpi = (uint)ActiveLabel.Dpi
             })).OK)
         {
-            LogError("Error triggering the simulator.");
+            Logger.LogError("Error triggering the simulator.");
             return false;
         }
 
@@ -1050,7 +1051,7 @@ public partial class Controller : ObservableObject
 
                 if (verRes > 0)
                 {
-                    LogError("Could not delete all simulator images.");
+                    Logger.LogError("Could not delete all simulator images.");
                     return false;
                 }
                 else
@@ -1076,7 +1077,7 @@ public partial class Controller : ObservableObject
 
             if (!sim.SaveImage(prepend + "simulatorImage", ActiveLabel.Image))
             {
-                LogError("Could not copy the image to the simulator images directory.");
+                Logger.LogError("Could not copy the image to the simulator images directory.");
                 return false;
             }
 
@@ -1085,7 +1086,7 @@ public partial class Controller : ObservableObject
         }
         catch (Exception ex)
         {
-            LogError(ex.Message);
+            Logger.LogError(ex.Message);
             return false;
         }
     }
@@ -1094,7 +1095,7 @@ public partial class Controller : ObservableObject
     {
         if (label == null)
         {
-            LogError("The label is null.");
+            Logger.LogError("The label is null.");
             return;
         }
 
@@ -1106,7 +1107,7 @@ public partial class Controller : ObservableObject
             if (repeat > 0)
                 if (!(await Commands.SetRepeat(repeat)).OK)
                 {
-                    LogError("Error setting the repeat.");
+                    Logger.LogError("Error setting the repeat.");
                     return;
                 }
 
@@ -1119,7 +1120,7 @@ public partial class Controller : ObservableObject
         {
             List<Sector_New_Verify> sectors = CreateSectors(ev, GetTableID(ActiveLabel.Table), Symbologies);
 
-            LogInfo("Creating sectors.");
+            Logger.LogInfo("Creating sectors.");
 
             foreach (Sector_New_Verify sec in sectors)
                 if (!await AddSector(sec.name, JsonConvert.SerializeObject(sec)))
@@ -1128,7 +1129,7 @@ public partial class Controller : ObservableObject
 
         if (!await Inspect(repeat))
         {
-            LogError("Error inspecting the repeat.");
+            Logger.LogError("Error inspecting the repeat.");
             return;
         }
     }
@@ -1218,7 +1219,7 @@ public partial class Controller : ObservableObject
     {
         if ((repeat.FullReport = await GetFullReport(repeat.Number, true)) == null)
         {
-            LogError("Unable to read the repeat report from the node.");
+            Logger.LogError("Unable to read the repeat report from the node.");
             return false;
         }
 
@@ -1248,17 +1249,4 @@ public partial class Controller : ObservableObject
             _ => "",
         };
 
-    #region Logging
-    private static void LogInfo(string message) => Logging.lib.Logger.LogInfo(typeof(Controller), message);
-#if DEBUG
-    private static void LogDebug(string message) => Logging.lib.Logger.LogDebug(typeof(Controller), message);
-#else
-private void LogDebug(string message) { }
-#endif
-    private static void LogWarning(string message) => Logging.lib.Logger.LogInfo(typeof(Controller), message);
-    private static void LogError(string message) => Logging.lib.Logger.LogError(typeof(Controller), message);
-    private static void LogError(Exception ex) => Logging.lib.Logger.LogError(typeof(Controller), ex);
-    private static void LogError(Exception ex, string message) => Logging.lib.Logger.LogError(typeof(Controller), ex, message);
-
-    #endregion
 }

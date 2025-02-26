@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Logging.lib;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -114,12 +115,12 @@ public class Commands
         if (Connection.IsException)
         {
             if (Connection.Exception != null)
-                LogError(Connection.Exception);
+                Logger.LogError(Connection.Exception);
             return false;
         }
         else if (Connection.HttpResponseMessage != null && !Connection.HttpResponseMessage.IsSuccessStatusCode)
         {
-            LogWarning($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
+            Logger.LogWarning($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
             return false;
         }
         return true;
@@ -142,13 +143,13 @@ public class Commands
         if (Connection.IsException)
         {
             if (Connection.Exception != null)
-                LogError(Connection.Exception);
+                Logger.LogError(Connection.Exception);
             results.Object = json;
             return results;
         }
         else if (Connection.HttpResponseMessage != null && !Connection.HttpResponseMessage.IsSuccessStatusCode)
         {
-            LogError($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
+            Logger.LogError($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
             results.Object = json;
             return results;
         }
@@ -165,7 +166,7 @@ public class Commands
         }
         catch (Exception ex)
         {
-            LogError(ex);
+            Logger.LogError(ex);
             results.Object = null;
         }
 
@@ -190,15 +191,15 @@ public class Commands
         if (Connection.IsException)
         {
             if (Connection.Exception != null)
-                LogError(Connection.Exception);
+                Logger.LogError(Connection.Exception);
             else
-                LogError("Unknown Connection Exception");
+                Logger.LogError("Unknown Connection Exception");
 
             return results;
         }
         else if (Connection.HttpResponseMessage != null && !Connection.HttpResponseMessage.IsSuccessStatusCode)
         {
-            LogWarning($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
+            Logger.LogWarning($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
             return results;
         }
 
@@ -224,12 +225,12 @@ public class Commands
         if (Connection.IsException)
         {
             if (Connection.Exception != null)
-                LogError(Connection.Exception);
+                Logger.LogError(Connection.Exception);
             return results;
         }
         else if (Connection.HttpResponseMessage != null && !Connection.HttpResponseMessage.IsSuccessStatusCode)
         {
-            LogWarning($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
+            Logger.LogWarning($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
             return results;
         }
 
@@ -255,12 +256,12 @@ public class Commands
         if (Connection.IsException)
         {
             if (Connection.Exception != null)
-                LogError(Connection.Exception);
+                Logger.LogError(Connection.Exception);
             return results;
         }
         else if (Connection.HttpResponseMessage != null && !Connection.HttpResponseMessage.IsSuccessStatusCode)
         {
-            LogWarning($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
+            Logger.LogWarning($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
             return results;
         }
 
@@ -273,17 +274,4 @@ public class Commands
     }
     #endregion
 
-    #region Logging
-    private static void LogInfo(string message) => Logging.lib.Logger.LogInfo(typeof(Controller), message);
-#if DEBUG
-    private static void LogDebug(string message) => Logging.lib.Logger.LogDebug(typeof(Controller), message);
-#else
-    private void LogDebug(string message) { }
-#endif
-    private static void LogWarning(string message) => Logging.lib.Logger.LogInfo(typeof(Controller), message);
-    private static void LogError(string message) => Logging.lib.Logger.LogError(typeof(Controller), message);
-    private static void LogError(Exception ex) => Logging.lib.Logger.LogError(typeof(Controller), ex);
-    private static void LogError(Exception ex, string message) => Logging.lib.Logger.LogError(typeof(Controller), ex, message);
-
-    #endregion
 }

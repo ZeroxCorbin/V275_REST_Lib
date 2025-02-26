@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using Logging.lib;
 using System;
 using System.IO;
 using System.Linq;
@@ -18,7 +19,7 @@ public partial class Connection : ObservableObject
         if (value != null)
         {
             IsException = true;
-            LogError(value);
+            Logger.LogError(value);
         }
         else
             IsException = false;
@@ -36,7 +37,7 @@ public partial class Connection : ObservableObject
 
     public async Task<string> Get_Token(string url, string user, string pass)
     {
-        LogDebug($"GET TOKEN: {url}");
+        Logger.LogDebug($"GET TOKEN: {url}");
 
         Reset();
 
@@ -60,7 +61,7 @@ public partial class Connection : ObservableObject
     }
     public async Task<bool> Post(string url, string data, string token)
     {
-        LogDebug($"POST: {url}");
+        Logger.LogDebug($"POST: {url}");
 
         Reset();
 
@@ -85,7 +86,7 @@ public partial class Connection : ObservableObject
     }
     public async Task<bool> Put(string url, string data, string token)
     {
-        LogDebug($"PUT: {url}");
+        Logger.LogDebug($"PUT: {url}");
 
         Reset();
 
@@ -115,7 +116,7 @@ public partial class Connection : ObservableObject
     }
     public async Task<bool> Put(string url, byte[] data, string token)
     {
-        LogDebug($"PUT: {url}");
+        Logger.LogDebug($"PUT: {url}");
 
         Reset();
 
@@ -140,7 +141,7 @@ public partial class Connection : ObservableObject
     }
     public async Task<bool> Patch(string url, string data, string token)
     {
-        LogDebug($"PATCH: {url}");
+        Logger.LogDebug($"PATCH: {url}");
 
         try
         {
@@ -166,7 +167,7 @@ public partial class Connection : ObservableObject
     }
     public async Task<bool> Delete(string url, string token)
     {
-        LogDebug($"DELETE: {url}");
+        Logger.LogDebug($"DELETE: {url}");
 
         Reset();
 
@@ -190,7 +191,7 @@ public partial class Connection : ObservableObject
     }
     public async Task<string> Get(string url, string token)
     {
-        LogDebug($"GET: {url}");
+        Logger.LogDebug($"GET: {url}");
 
         Reset();
 
@@ -214,7 +215,7 @@ public partial class Connection : ObservableObject
     }
     public async Task<byte[]> GetBytes(string url, string token)
     {
-        LogDebug($"GET: {url}");
+        Logger.LogDebug($"GET: {url}");
 
         Reset();
 
@@ -238,7 +239,7 @@ public partial class Connection : ObservableObject
     }
     public async Task<Stream> Stream(string url, string token)
     {
-        LogDebug($"STREAM: {url}");
+        Logger.LogDebug($"STREAM: {url}");
 
         Reset();
 
@@ -258,18 +259,4 @@ public partial class Connection : ObservableObject
             return null;
         }
     }
-
-    #region Logging
-    private static void LogInfo(string message) => Logging.lib.Logger.LogInfo(typeof(Controller), message);
-#if DEBUG
-    private static void LogDebug(string message) => Logging.lib.Logger.LogDebug(typeof(Controller), message);
-#else
-    private void LogDebug(string message) { }
-#endif
-    private static void LogWarning(string message) => Logging.lib.Logger.LogInfo(typeof(Controller), message);
-    private static void LogError(string message) => Logging.lib.Logger.LogError(typeof(Controller), message);
-    private static void LogError(Exception ex) => Logging.lib.Logger.LogError(typeof(Controller), ex);
-    private static void LogError(Exception ex, string message) => Logging.lib.Logger.LogError(typeof(Controller), ex, message);
-
-    #endregion
 }
