@@ -12,6 +12,8 @@ namespace V275_REST_Lib;
 
 public partial class Connection : ObservableObject
 {
+    private static TimeSpan _baseTimeout = TimeSpan.FromSeconds(30);
+
     [ObservableProperty] private bool isException;
     [ObservableProperty] private Exception? exception;
     partial void OnExceptionChanged(Exception? value)
@@ -35,8 +37,10 @@ public partial class Connection : ObservableObject
     public void CertOverride() => ServicePointManager.ServerCertificateValidationCallback += (sender1, certificate, chain, sslPolicyErrors) => true;
     public void CertNormal() => ServicePointManager.ServerCertificateValidationCallback -= (sender1, certificate, chain, sslPolicyErrors) => true;
 
-    public async Task<string> Get_Token(string url, string user, string pass)
+    public async Task<string> Get_Token(string url, string user, string pass, int timeoutS = -1)
     {
+        TimeSpan timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
+
         Logger.LogDebug($"GET TOKEN: {url}");
 
         Reset();
@@ -45,6 +49,7 @@ public partial class Connection : ObservableObject
         {
             using HttpClient client = new();
             client.BaseAddress = new System.Uri(url);
+            client.Timeout = timeout;
             client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(UTF8Encoding.UTF8.GetBytes($"{user}:{pass}")));
             client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
 
@@ -59,8 +64,10 @@ public partial class Connection : ObservableObject
             return null;
         }
     }
-    public async Task<bool> Post(string url, string data, string token)
+    public async Task<bool> Post(string url, string data, string token, int timeoutS = -1)
     {
+        TimeSpan timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
+
         Logger.LogDebug($"POST: {url}");
 
         Reset();
@@ -69,6 +76,7 @@ public partial class Connection : ObservableObject
         {
             using HttpClient client = new();
             client.BaseAddress = new System.Uri(url);
+            client.Timeout = TimeSpan.FromSeconds(30);
             if (!string.IsNullOrEmpty(token))
                 _ = client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", token);
             client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
@@ -84,8 +92,10 @@ public partial class Connection : ObservableObject
             return false;
         }
     }
-    public async Task<bool> Put(string url, string data, string token)
+    public async Task<bool> Put(string url, string data, string token, int timeoutS = -1)
     {
+        TimeSpan timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
+
         Logger.LogDebug($"PUT: {url}");
 
         Reset();
@@ -94,6 +104,7 @@ public partial class Connection : ObservableObject
         {
             using HttpClient client = new();
             client.BaseAddress = new System.Uri(url);
+            client.Timeout = timeout;
             if (!string.IsNullOrEmpty(token))
                 _ = client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", token);
             client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
@@ -114,8 +125,10 @@ public partial class Connection : ObservableObject
             return false;
         }
     }
-    public async Task<bool> Put(string url, byte[] data, string token)
+    public async Task<bool> Put(string url, byte[] data, string token, int timeoutS = -1)
     {
+        TimeSpan timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
+
         Logger.LogDebug($"PUT: {url}");
 
         Reset();
@@ -124,6 +137,7 @@ public partial class Connection : ObservableObject
         {
             using HttpClient client = new();
             client.BaseAddress = new System.Uri(url);
+            client.Timeout = timeout;
             if (!string.IsNullOrEmpty(token))
                 _ = client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", token);
             client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
@@ -139,14 +153,17 @@ public partial class Connection : ObservableObject
             return false;
         }
     }
-    public async Task<bool> Patch(string url, string data, string token)
+    public async Task<bool> Patch(string url, string data, string token, int timeoutS = -1)
     {
+        TimeSpan timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
+
         Logger.LogDebug($"PATCH: {url}");
 
         try
         {
             using HttpClient client = new();
             client.BaseAddress = new System.Uri(url);
+            client.Timeout = timeout;
             if (!string.IsNullOrEmpty(token))
                 _ = client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", token);
             client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
@@ -165,8 +182,10 @@ public partial class Connection : ObservableObject
             return false;
         }
     }
-    public async Task<bool> Delete(string url, string token)
+    public async Task<bool> Delete(string url, string token, int timeoutS = -1)
     {
+        TimeSpan timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
+
         Logger.LogDebug($"DELETE: {url}");
 
         Reset();
@@ -175,6 +194,7 @@ public partial class Connection : ObservableObject
         {
             using HttpClient client = new();
             client.BaseAddress = new System.Uri(url);
+            client.Timeout = timeout;
             if (!string.IsNullOrEmpty(token))
                 _ = client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", token);
             client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
@@ -189,8 +209,10 @@ public partial class Connection : ObservableObject
             return false;
         }
     }
-    public async Task<string> Get(string url, string token)
+    public async Task<string> Get(string url, string token, int timeoutS = -1)
     {
+        TimeSpan timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
+
         Logger.LogDebug($"GET: {url}");
 
         Reset();
@@ -199,6 +221,7 @@ public partial class Connection : ObservableObject
         {
             using HttpClient client = new();
             client.BaseAddress = new System.Uri(url);
+            client.Timeout = timeout;
             if (!string.IsNullOrEmpty(token))
                 _ = client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", token);
             client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
@@ -213,8 +236,10 @@ public partial class Connection : ObservableObject
             return null;
         }
     }
-    public async Task<byte[]> GetBytes(string url, string token)
+    public async Task<byte[]> GetBytes(string url, string token, int timeoutS = -1)
     {
+        TimeSpan timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
+
         Logger.LogDebug($"GET: {url}");
 
         Reset();
@@ -223,6 +248,7 @@ public partial class Connection : ObservableObject
         {
             using HttpClient client = new();
             client.BaseAddress = new System.Uri(url);
+            client.Timeout = timeout;
             if (!string.IsNullOrEmpty(token))
                 _ = client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", token);
             client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("image/bmp"));
@@ -237,8 +263,10 @@ public partial class Connection : ObservableObject
             return null;
         }
     }
-    public async Task<Stream> Stream(string url, string token)
+    public async Task<Stream> Stream(string url, string token, int timeoutS = -1)
     {
+        TimeSpan timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
+
         Logger.LogDebug($"STREAM: {url}");
 
         Reset();
@@ -247,6 +275,7 @@ public partial class Connection : ObservableObject
         {
             using HttpClient client = new();
             client.BaseAddress = new System.Uri(url);
+            client.Timeout = timeout;
             if (!string.IsNullOrEmpty(token))
                 _ = client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", token);
             client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("text/event-stream"));
