@@ -21,6 +21,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\BarcodeVerification.lib\BarcodeVerification.lib.csproj" />
 	  <ProjectReference Include="..\Logging.lib\Logging.lib.csproj" />
 	</ItemGroup>
 </Project>
