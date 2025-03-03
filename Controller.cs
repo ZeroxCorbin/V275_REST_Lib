@@ -63,6 +63,8 @@ public class Repeat
 [JsonObject(MemberSerialization.OptIn)]
 public partial class Controller : ObservableObject
 {
+    private static readonly SynchronizationContext OwnerContext = SynchronizationContext.Current;
+
     public const double InchesPerMeter = 39.3701;
     public enum RestoreSectorsResults
     {
