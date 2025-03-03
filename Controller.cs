@@ -17,7 +17,7 @@ public class Label
 {
     public byte[] Image { get; set; }
     public List<Job.Sector> Sectors { get; set; }
-    public GS1TableNames Table { get; set; }
+    public Gs1TableNames Table { get; set; }
     public int Dpi { get; set; }
 
     public Action<Repeat> RepeatAvailable { get; set; }
@@ -28,7 +28,7 @@ public class Label
     /// <param name="dpi">Must be set if using the simulator API.</param>
     /// <param name="sectors">If null, ignore. If empty, auto detect. If not empty, restore.</param>
     /// <param name="table"></param>
-    public Label(Action<Repeat> repeatAvailable, byte[] image, int dpi, List<Job.Sector> sectors, GS1TableNames table = GS1TableNames.None)
+    public Label(Action<Repeat> repeatAvailable, byte[] image, int dpi, List<Job.Sector> sectors, Gs1TableNames table = Gs1TableNames.None)
     {
         RepeatAvailable = repeatAvailable;
         Table = table;
@@ -1226,26 +1226,26 @@ public partial class Controller : ObservableObject
         return true;
     }
 
-    private string GetTableID(GS1TableNames gS1TableTypes)
+    private string GetTableID(Gs1TableNames gS1TableTypes)
         => gS1TableTypes switch
         {
-            GS1TableNames._1 => "1",
-            GS1TableNames._2 => "2",
-            GS1TableNames._3 => "3",
-            GS1TableNames._4 => "4",
-            GS1TableNames._5 => "5",
-            GS1TableNames._6 => "6",
-            GS1TableNames._7_1 => "7.1",
-            GS1TableNames._7_2 => "7.2",
-            GS1TableNames._7_3 => "7.3",
-            GS1TableNames._7_4 => "7.4",
-            GS1TableNames._8 => "8",
-            GS1TableNames._9 => "9",
-            GS1TableNames._10 => "10",
-            GS1TableNames._11 => "11",
-            GS1TableNames._12_1 => "12.1",
-            GS1TableNames._12_2 => "12.2",
-            GS1TableNames._12_3 => "12.3",
+            Gs1TableNames._1 => "1",
+            Gs1TableNames._2 => "2",
+            Gs1TableNames._3 => "3",
+            Gs1TableNames._4 => "4",
+            Gs1TableNames._5 => "5",
+            Gs1TableNames._6 => "6",
+            Gs1TableNames._7_1 => "7.1",
+            Gs1TableNames._7_2 => "7.2",
+            Gs1TableNames._7_3 => "7.3",
+            Gs1TableNames._7_4 => "7.4",
+            Gs1TableNames._8 => "8",
+            Gs1TableNames._9 => "9",
+            Gs1TableNames._10 => "10",
+            Gs1TableNames._11 => "11",
+            Gs1TableNames._12_1 => "12.1",
+            Gs1TableNames._12_2 => "12.2",
+            Gs1TableNames._12_3 => "12.3",
             _ => "",
         };
 

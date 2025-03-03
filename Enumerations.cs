@@ -15,7 +15,7 @@ public enum NodeStates
     Disconnected
 }
 
-public enum GS1TableNames
+public enum Gs1TableNames
 {
     [Description("None")]
     None,
