@@ -135,12 +135,23 @@ public partial class Controller : ObservableObject
     public Devices.Node? Node => Devices?.nodes?.FirstOrDefault((n) => n.enumeration == NodeNumber);
     public Devices.Camera? Camera => Devices?.cameras?.FirstOrDefault((c) => c.mac == Node.cameraMAC);
 
+    /// <summary>
+    /// The product information for the system.
+    /// <see cref="Product"/>
+    /// </summary>
     [ObservableProperty] private Product? product;
     partial void OnProductChanging(Product? value) => IsProductValid = value != null && value is Product;
+    partial void OnProductChanged(Product? value)
+    {
+        if (value != null)
+            Version = $"{Product?.version?.major}.{Product?.version?.minor}.{Product?.version?.service}.{Product?.version?.build}";
+        else
+            Version = "----";
+    }
 
     [ObservableProperty] private string productJSON;
     [ObservableProperty] private bool isProductValid;
-    public string ProductVersion => $"{Product?.version?.major}.{Product?.version?.minor}.{Product?.version?.service}.{Product?.version?.build}";
+    [ObservableProperty] private string version = "----";
 
     #endregion
 
@@ -223,8 +234,7 @@ public partial class Controller : ObservableObject
                                          {
                                              _ = await UpdateDevices();
                                              _ = await UpdateInspection();
-                                             _ = await UpdateProduct();
-                                         }).Wait();
+                                          }).Wait();
 
     public async Task Login(bool monitor)
     {
@@ -301,6 +311,7 @@ public partial class Controller : ObservableObject
         _ = await UpdateCalibration();
         _ = await UpdateJobs();
         _ = await UpdatePrint();
+        _ = await UpdateProduct();
 
         //If the system is in simulator mode, adjust the simulation settings
         if (IsSimulator)
@@ -355,16 +366,16 @@ public partial class Controller : ObservableObject
         IsLoggedIn_Monitor = false;
 
         //_ = await UpdateDevices(true);
-        //_ = await UpdateInspection(true); 
-        //_ = await UpdateProduct(true);
+        //_ = await UpdateInspection(true);
+        _ = UpdateProduct(true);
 
-        _ = await UpdateJobs(true);
-        _ = await UpdateJob(true);
-        _ = await UpdateConfigurationCamera(true);
-        _ = await UpdateSymbologies(true);
-        _ = await UpdateCalibration(true);
-        _ = await UpdateSimulation(true);
-        _ = await UpdatePrint(true);
+        _ = UpdateJobs(true);
+        _ = UpdateJob(true);
+        _ = UpdateConfigurationCamera(true);
+        _ = UpdateSymbologies(true);
+        _ = UpdateCalibration(true);
+        _ = UpdateSimulation(true);
+        _ = UpdatePrint(true);
     }
     private async Task PreLogout()
     {
@@ -650,7 +661,7 @@ public partial class Controller : ObservableObject
         Logger.LogDebug($"LabelEnd: Controller State is? {State}: ActiveLabel is null? {ActiveLabel == null}: IsLoggedIn_Control? {IsLoggedIn_Control}: Event.Data is null? {ev.data == null}");
 
         if (ActiveLabel != null && IsLoggedIn_Control && ev.data! != null)
-            RepeatAvailableCallBack(new Repeat(ev.data.repeat, ActiveLabel, Product?.part));
+            RepeatAvailableCallBack(new Repeat(ev.data.repeat, ActiveLabel, Version));
 
         ActiveLabel = null;
     }
@@ -1034,7 +1045,7 @@ public partial class Controller : ObservableObject
             if (!sim.DeleteAllImages())
             {
 
-                if (System.Version.TryParse(ProductVersion, out Version ver))
+                if (System.Version.TryParse(Version, out Version ver))
                 {
                     Version verMin = System.Version.Parse("1.1.0.3009");
                     verRes = ver.CompareTo(ver);
@@ -1171,7 +1182,7 @@ public partial class Controller : ObservableObject
             return;
         }
 
-        repeat.FullReport.Job.jobVersion = ProductVersion;
+        repeat.FullReport.Job.jobVersion = Version;
 
         repeat.Label.RepeatAvailable?.Invoke(repeat);
     }
