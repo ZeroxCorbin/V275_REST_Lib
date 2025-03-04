@@ -51,7 +51,7 @@ public class Repeat
 {
     public string Version { get; set; }
     public int Number { get; set; } = -1;
-    public FullReport FullReport { get; set; } = new FullReport();
+    public FullReport? FullReport { get; set; }
     public Label Label { get; set; }
     public Events_System? SetupDetectEvent { get; set; }
 
@@ -137,8 +137,10 @@ public partial class Controller : ObservableObject
 
     [ObservableProperty] private Product? product;
     partial void OnProductChanging(Product? value) => IsProductValid = value != null && value is Product;
+
     [ObservableProperty] private string productJSON;
     [ObservableProperty] private bool isProductValid;
+    public string ProductVersion => $"{Product?.version?.major}.{Product?.version?.minor}.{Product?.version?.service}.{Product?.version?.build}";
 
     #endregion
 
@@ -721,9 +723,9 @@ public partial class Controller : ObservableObject
             return NodeStates.Idle;
         else if (state == "editing")
             return NodeStates.Editing;
-        else if (state == "running")
-            return NodeStates.Running;
-        else return state == "paused" ? NodeStates.Paused : state == "disconnected" ? NodeStates.Disconnected : NodeStates.Offline;
+        else return state == "running"
+            ? NodeStates.Running
+            : state == "paused" ? NodeStates.Paused : state == "disconnected" ? NodeStates.Disconnected : NodeStates.Offline;
     }
     public async Task ChangeJob(string name)
     {
@@ -762,10 +764,7 @@ public partial class Controller : ObservableObject
     public async Task<bool> RemoveRepeat()
     {
         int repeat = await GetLatestRepeatNumber();
-        if (repeat == -9999)
-            return true;
-
-        return (await Commands.RemoveRepeat(repeat)).OK && (await Commands.ResumeJob()).OK;
+        return repeat == -9999 || (await Commands.RemoveRepeat(repeat)).OK && (await Commands.ResumeJob()).OK;
     }
 
     public async Task<bool> Inspect(int repeat)
@@ -1034,18 +1033,17 @@ public partial class Controller : ObservableObject
 
             if (!sim.DeleteAllImages())
             {
-                string verCur = Product?.part?[(Product.part.LastIndexOf('-') + 1)..];
 
-                if (verCur != null)
+                if (System.Version.TryParse(ProductVersion, out Version ver))
                 {
-                    Version ver = System.Version.Parse(verCur);
                     Version verMin = System.Version.Parse("1.1.0.3009");
                     verRes = ver.CompareTo(ver);
+
                 }
 
                 if (verRes > 0)
                 {
-                    Logger.LogError("Could not delete all simulator images.");
+                    Logger.LogError("Could not delete all simulator images. The version is less than 1.1.0.3009 which does not allow the first image to be deleted.");
                     return false;
                 }
                 else
@@ -1155,8 +1153,26 @@ public partial class Controller : ObservableObject
     }
     private async void RepeatAvailableCallBack(Repeat repeat)
     {
+        if (repeat == null)
+        {
+            Logger.LogError("The repeat is null.");
+            return;
+        }
+
         repeat.FullReport = await GetFullReport(repeat.Number, true);
-        repeat.FullReport.Job.jobVersion = $"{Product.version.major}.{Product.version.minor}.{Product.version.service}.{Product.version.build}";
+        if (repeat.FullReport == null)
+        {
+            Logger.LogError("Unable to read the repeat report from the node.");
+            return;
+        }
+        if (repeat.FullReport.Job == null)
+        {
+            Logger.LogError("The job is null.");
+            return;
+        }
+
+        repeat.FullReport.Job.jobVersion = ProductVersion;
+
         repeat.Label.RepeatAvailable?.Invoke(repeat);
     }
 
