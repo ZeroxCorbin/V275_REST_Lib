@@ -723,9 +723,7 @@ public partial class Controller : ObservableObject
             return NodeStates.Editing;
         else if (state == "running")
             return NodeStates.Running;
-        else if (state == "paused")
-            return NodeStates.Paused;
-        else return state == "disconnected" ? NodeStates.Disconnected : NodeStates.Offline;
+        else return state == "paused" ? NodeStates.Paused : state == "disconnected" ? NodeStates.Disconnected : NodeStates.Offline;
     }
     public async Task ChangeJob(string name)
     {
@@ -767,10 +765,7 @@ public partial class Controller : ObservableObject
         if (repeat == -9999)
             return true;
 
-        if (!(await Commands.RemoveRepeat(repeat)).OK)
-            return false;
-
-        return (await Commands.ResumeJob()).OK;
+        return (await Commands.RemoveRepeat(repeat)).OK && (await Commands.ResumeJob()).OK;
     }
 
     public async Task<bool> Inspect(int repeat)
@@ -845,13 +840,7 @@ public partial class Controller : ObservableObject
                 return false;
         return true;
     }
-    public async Task<bool> DetectSectors()
-    {
-        if (await Commands.GetDetect() == null)
-            return false;
-
-        return (await Commands.Detect()).OK;
-    }
+    public async Task<bool> DetectSectors() => await Commands.GetDetect() != null && (await Commands.Detect()).OK;
 
     public async Task<bool> AddSector(string name, string json) => (await Commands.AddSector(name, json)).OK;
     public async Task<bool> AddMask(string name, string json) => (await Commands.AddMask(name, json)).OK;
@@ -1230,5 +1219,4 @@ public partial class Controller : ObservableObject
 
         return true;
     }
-
 }
