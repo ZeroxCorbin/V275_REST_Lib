@@ -1,4 +1,5 @@
-﻿using BarcodeVerification.lib.GS1;
+﻿using BarcodeVerification.lib.Common;
+using BarcodeVerification.lib.GS1;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Logging.lib;
 using Newtonsoft.Json;
@@ -11,6 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using V275_REST_Lib.Enumerations;
 using V275_REST_Lib.Models;
+using Devices = V275_REST_Lib.Models.Devices;
 
 namespace V275_REST_Lib;
 
@@ -234,7 +236,7 @@ public partial class Controller : ObservableObject
                                          {
                                              _ = await UpdateDevices();
                                              _ = await UpdateInspection();
-                                          }).Wait();
+                                         }).Wait();
 
     public async Task Login(bool monitor)
     {
@@ -732,9 +734,9 @@ public partial class Controller : ObservableObject
             return NodeStates.Offline;
         else if (state == "idle")
             return NodeStates.Idle;
-        else if (state == "editing")
-            return NodeStates.Editing;
-        else return state == "running"
+        else return state == "editing"
+            ? NodeStates.Editing
+            : state == "running"
             ? NodeStates.Running
             : state == "paused" ? NodeStates.Paused : state == "disconnected" ? NodeStates.Disconnected : NodeStates.Offline;
     }
@@ -775,7 +777,7 @@ public partial class Controller : ObservableObject
     public async Task<bool> RemoveRepeat()
     {
         int repeat = await GetLatestRepeatNumber();
-        return repeat == -9999 || (await Commands.RemoveRepeat(repeat)).OK && (await Commands.ResumeJob()).OK;
+        return repeat == -9999 || ((await Commands.RemoveRepeat(repeat)).OK && (await Commands.ResumeJob()).OK);
     }
 
     public async Task<bool> Inspect(int repeat)
@@ -1195,12 +1197,17 @@ public partial class Controller : ObservableObject
         if (ev?.data != null && ev.data.detections != null)
             foreach (Events_System.Detection val in ev.data.detections)
             {
-                if (val.region == null)
+                if (val.region == null || string.IsNullOrEmpty(val.symbology))
                     continue;
 
-                Symbologies.Symbol sym = symbologies.Find((e) => e.symbology == val.symbology);
+                AvailableSymbologies sym = val.symbology.GetSymbology(AvailableDevices.V275);
 
-                if (sym == null)
+                Symbologies.Symbol sym1 = symbologies.Find((e) => e.symbology == val.symbology);
+
+                if(sym1 == null)
+                    continue;
+
+                if(sym.GetRegionTypeName(AvailableDevices.V275) != sym1.regionType)
                     continue;
 
                 Sector_New_Verify verify = new();
@@ -1216,11 +1223,11 @@ public partial class Controller : ObservableObject
                     verify.gradingStandard.tableId = "1";
                 }
 
-                verify.id = sym.regionType == "verify1D" ? d1++ : d2++;
+                verify.id = sym.GetRegionType(AvailableDevices.V275) == AvailableRegionTypes.Type1D ? d1++ : d2++;
 
-                verify.type = sym.regionType;
+                verify.type = sym.GetRegionTypeName(AvailableDevices.V275);
                 verify.symbology = val.symbology;
-                verify.name = $"{sym.regionType}_{verify.id}";
+                verify.name = $"{verify.type}_{verify.id}";
                 verify.username = $"{char.ToUpper(verify.name[0])}{verify.name[1..]}";
 
                 verify.top = val.region.y;
