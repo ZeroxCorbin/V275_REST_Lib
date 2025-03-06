@@ -340,9 +340,31 @@ public partial class Controller : ObservableObject
         // Request the server to send extended data
         _ = await Commands.SetSendExtendedData(true);
 
+        ConvertStandards(await CompileStandardTable());
+
         // Attempt to start the WebSocket connection for receiving node events
         if (!await WebSocket.StartAsync(Commands.URLs.WS_NodeEvents))
             return; // If the WebSocket connection cannot be started, exit the method
+    }
+
+    private void ConvertStandards(Dictionary<(string symbol, string type), List<(string standard, string table)>> dict)
+    {
+        Dictionary<AvailableSymbologies, List<AvailableTables>> standards = [];
+        foreach ((string symbol, string type) standard in dict.Keys)
+        {
+            AvailableSymbologies data = standard.type.GetSymbology(AvailableDevices.V275);
+
+            if (!standards.ContainsKey(data))
+                standards.Add(data, []);
+
+            foreach ((string standard, string table) table in dict[standard])
+            {
+                AvailableTables tableData = table.table.GetTable(AvailableDevices.V275);
+                standards[data].Add(tableData);
+            }
+        }
+
+        File.WriteAllText("V275_GS1Tables.json", JsonConvert.SerializeObject(standards, Formatting.Indented));
     }
 
     public async Task Logout()
@@ -728,13 +750,32 @@ public partial class Controller : ObservableObject
             ProcessLabel(ev.data.repeat, ActiveLabel, null);
     }
 
+    public async Task<Dictionary<(string symbol, string type), List<(string standard, string table)>>> CompileStandardTable()
+    {
+        Dictionary<(string symbol, string type), List<(string standard, string table)>> dict = [];
+
+        Results res = await Commands.GetGradingStandards();
+        if (!res.OK)
+            return dict;
+
+        foreach (GradingStandards.GradingStandard gs in ((GradingStandards)res.Object).gradingStandards)
+        {
+
+            if (!dict.ContainsKey((gs.symbology, gs.symbolType)))
+                dict.Add((gs.symbology, gs.symbolType), []);
+            dict[(gs.symbology, gs.symbolType)].Add((gs.standard, gs.tableId));
+
+        }
+        return dict;
+    }
+
     private NodeStates GetState(string state)
     {
         if (state == "offline")
             return NodeStates.Offline;
-        else if (state == "idle")
-            return NodeStates.Idle;
-        else return state == "editing"
+        else return state == "idle"
+            ? NodeStates.Idle
+            : state == "editing"
             ? NodeStates.Editing
             : state == "running"
             ? NodeStates.Running
@@ -1123,7 +1164,7 @@ public partial class Controller : ObservableObject
         }
         else
         {
-            List<Sector_New_Verify> sectors = CreateSectors(ev, Tables.GetV275TableString(ActiveLabel?.Table), Symbologies);
+            List<Sector_New_Verify> sectors = CreateSectors(ev, ActiveLabel.Table.GetTableName(), Symbologies);
 
             Logger.LogInfo("Creating sectors.");
 
@@ -1204,10 +1245,10 @@ public partial class Controller : ObservableObject
 
                 Symbologies.Symbol sym1 = symbologies.Find((e) => e.symbology == val.symbology);
 
-                if(sym1 == null)
+                if (sym1 == null)
                     continue;
 
-                if(sym.GetRegionTypeName(AvailableDevices.V275) != sym1.regionType)
+                if (sym.GetRegionTypeName(AvailableDevices.V275) != sym1.regionType)
                     continue;
 
                 Sector_New_Verify verify = new();

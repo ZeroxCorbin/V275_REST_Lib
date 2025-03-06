@@ -6,7 +6,37 @@ using System.Threading.Tasks;
 
 namespace V275_REST_Lib.Models
 {
-    public class GradingStandards
+
+public class GradingStandards
+{
+    public GradingStandard[] gradingStandards { get; set; }
+
+    public class GradingStandard
+    {
+        public string standard { get; set; }
+        public string tableId { get; set; }
+        public string description { get; set; }
+        public string symbology { get; set; }
+        public string symbolType { get; set; }
+        public float minOverallGrade { get; set; }
+        public float aperture { get; set; }
+        public Specification[] specifications { get; set; }
+    }
+
+    public class Specification
+    {
+        public float minXdim { get; set; }
+        public float maxXdim { get; set; }
+        public float minHeightFactor { get; set; }
+        public float minHeightAbs { get; set; }
+        public int minLeftQZ { get; set; }
+        public int minRightQZ { get; set; }
+        public string ai_restriction { get; set; }
+    }
+
+}
+
+    public class GradingStandards_old
     {
         public GradingStandard[]? gradingStandards { get; set; }
 
