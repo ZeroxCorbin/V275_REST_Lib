@@ -1164,7 +1164,7 @@ public partial class Controller : ObservableObject
         }
         else
         {
-            List<Sector_New_Verify> sectors = CreateSectors(ev, ActiveLabel.Table.GetTableName(), Symbologies);
+            List<Sector_New_Verify> sectors = CreateSectors(ev, ActiveLabel.Table?.GetTableName(), Symbologies);
 
             Logger.LogInfo("Creating sectors.");
 
