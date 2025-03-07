@@ -1264,7 +1264,7 @@ public partial class Controller : ObservableObject
                     verify.gradingStandard.tableId = "1";
                 }
 
-                verify.id = sym.GetRegionType(AvailableDevices.V275) == AvailableRegionTypes.Type1D ? d1++ : d2++;
+                verify.id = sym.GetRegionType(AvailableDevices.V275) == AvailableRegionTypes._1D ? d1++ : d2++;
 
                 verify.type = sym.GetRegionTypeName(AvailableDevices.V275);
                 verify.symbology = val.symbology;
