@@ -1248,7 +1248,7 @@ public partial class Controller : ObservableObject
                 if (sym1 == null)
                     continue;
 
-                if (sym.GetRegionTypeName(AvailableDevices.V275) != sym1.regionType)
+                if (sym.GetSymbologyRegionTypeName(AvailableDevices.V275) != sym1.regionType)
                     continue;
 
                 Sector_New_Verify verify = new();
@@ -1264,9 +1264,9 @@ public partial class Controller : ObservableObject
                     verify.gradingStandard.tableId = "1";
                 }
 
-                verify.id = sym.GetRegionType(AvailableDevices.V275) == AvailableRegionTypes._1D ? d1++ : d2++;
+                verify.id = sym.GetSymbologyRegionType(AvailableDevices.V275) == AvailableRegionTypes._1D ? d1++ : d2++;
 
-                verify.type = sym.GetRegionTypeName(AvailableDevices.V275);
+                verify.type = sym.GetSymbologyRegionTypeName(AvailableDevices.V275);
                 verify.symbology = val.symbology;
                 verify.name = $"{verify.type}_{verify.id}";
                 verify.username = $"{char.ToUpper(verify.name[0])}{verify.name[1..]}";
