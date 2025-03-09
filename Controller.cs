@@ -107,7 +107,7 @@ public partial class Controller : ObservableObject
     [ObservableProperty][property: JsonProperty] private uint nodeNumber;
     partial void OnNodeNumberChanged(uint value) { Commands.URLs.NodeNumber = value; }
 
-    [ObservableProperty][property: JsonProperty] private string userName;
+    [ObservableProperty][property: JsonProperty] private string username;
     [ObservableProperty][property: JsonProperty] private string password;
     [ObservableProperty][property: JsonProperty] private string simulatorImageDirectory;
 
@@ -228,7 +228,7 @@ public partial class Controller : ObservableObject
         Host = host;
         SystemPort = port;
         NodeNumber = nodeNumber;
-        UserName = userName;
+        Username = userName;
         Password = password;
         SimulatorImageDirectory = dir;
 
@@ -244,28 +244,28 @@ public partial class Controller : ObservableObject
     {
         if (IsLoggedIn)
         {
-            Logger.LogDebug($"Logging out. {UserName} @ {Host}:{SystemPort}");
+            Logger.LogDebug($"Logging out. {Username} @ {Host}:{SystemPort}");
             await Logout();
             return;
         }
 
         if (!PreLogin())
         {
-            Logger.LogDebug($"Pre-Log in FAILED. {UserName} @ {Host}:{SystemPort}");
+            Logger.LogDebug($"Pre-Log in FAILED. {Username} @ {Host}:{SystemPort}");
             return;
         }
 
-        Logger.LogDebug($"Logging in. {UserName} @ {Host}:{SystemPort}");
+        Logger.LogDebug($"Logging in. {Username} @ {Host}:{SystemPort}");
 
-        if ((await Commands.Login(UserName, Password, monitor)).OK)
+        if ((await Commands.Login(Username, Password, monitor)).OK)
         {
-            Logger.LogDebug($"Logged in. {(monitor ? "Monitor" : "Control")} {UserName} @ {Host}:{SystemPort}");
+            Logger.LogDebug($"Logged in. {(monitor ? "Monitor" : "Control")} {Username} @ {Host}:{SystemPort}");
 
             PostLogin(monitor);
         }
         else
         {
-            Logger.LogError($"Login FAILED. {UserName} @ {Host}:{SystemPort}");
+            Logger.LogError($"Login FAILED. {Username} @ {Host}:{SystemPort}");
 
             IsLoggedIn_Control = false;
             IsLoggedIn_Monitor = false;
@@ -302,7 +302,7 @@ public partial class Controller : ObservableObject
         // Set the login data based on whether the login is for monitoring or control
         LoginData.accessLevel = isLoggedIn_Monitor ? "monitor" : "control";
         LoginData.token = Commands.Token; // Store the authentication token
-        LoginData.id = UserName; // Store the user's ID
+        LoginData.id = Username; // Store the user's ID
         LoginData.state = "0"; // Set the login state to '0' indicating a successful login
 
         // Update the login status properties based on the login type
