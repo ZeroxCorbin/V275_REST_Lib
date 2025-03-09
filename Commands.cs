@@ -1,5 +1,6 @@
 ﻿using Logging.lib;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -54,6 +55,8 @@ public class Commands
         Token = string.Empty;
         return results;
     }
+
+    public async Task<Results> GetJObject(string url) => CheckResults<JObject>(await Connection.Get(url, Token));
 
     public async Task<Results> GetDevices() => CheckResults<Models.Devices>(await Connection.Get(URLs.Devices(), string.Empty));
     public async Task<Results> GetInspection() => CheckResults<Models.Inspection>(await Connection.Get(URLs.Inspection(), string.Empty));

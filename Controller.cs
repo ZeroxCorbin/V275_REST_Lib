@@ -3,6 +3,7 @@ using BarcodeVerification.lib.GS1;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Logging.lib;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -44,7 +45,8 @@ public class Label
 
 public class FullReport
 {
-    public Report? Report { get; set; }
+    public JObject? Report { get; set; }
+
     public Job? Job { get; set; }
     public byte[]? Image { get; set; }
 }
@@ -769,18 +771,15 @@ public partial class Controller : ObservableObject
         return dict;
     }
 
-    private NodeStates GetState(string state)
-    {
-        if (state == "offline")
-            return NodeStates.Offline;
-        else return state == "idle"
+    private NodeStates GetState(string state) => state == "offline"
+            ? NodeStates.Offline
+            : state == "idle"
             ? NodeStates.Idle
             : state == "editing"
             ? NodeStates.Editing
             : state == "running"
             ? NodeStates.Running
             : state == "paused" ? NodeStates.Paused : state == "disconnected" ? NodeStates.Disconnected : NodeStates.Offline;
-    }
     public async Task ChangeJob(string name)
     {
         if ((await Commands.UnloadJob()).OK)
@@ -840,22 +839,18 @@ public partial class Controller : ObservableObject
         //return LabelEnd;
     }
 
-    public async Task<FullReport?> GetFullReport(int repeat, bool getImage)
-    {
+    public async Task<FullReport> GetFullReport(int repeat, bool getImage)
+    {        
         if (repeat == 0)
             repeat = await GetLatestRepeatNumber();
 
+        Results? res = State == NodeStates.Editing ? await Commands.GetReport() : await Commands.GetReport(repeat);
+
         FullReport report = new();
-        if (State == NodeStates.Editing)
-        {
-            if ((report.Report = (await Commands.GetReport()).Object as Report) == null)
-                return null;
-        }
-        else
-        {
-            if ((report.Report = (await Commands.GetReport(repeat)).Object as Report) == null)
-                return null;
-        }
+        if (res == null || !res.OK)
+            return report;
+
+        report.Report = JObject.Parse(res.Json);
 
         if (getImage)
             if ((report.Image = (await Commands.GetRepeatsImage(repeat)).Object as byte[]) != null)
@@ -1264,7 +1259,7 @@ public partial class Controller : ObservableObject
                     verify.gradingStandard.tableId = "1";
                 }
 
-                verify.id = sym.GetSymbologyRegionType(AvailableDevices.V275) == AvailableRegionTypes._1D ? d1++ : d2++;
+                verify.id = sym.GetSymbologyRegionType(AvailableDevices.V275) is AvailableRegionTypes._1D or AvailableRegionTypes._2DStacked or AvailableRegionTypes.Postal ? d1++ : d2++;
 
                 verify.type = sym.GetSymbologyRegionTypeName(AvailableDevices.V275);
                 verify.symbology = val.symbology;
