@@ -20,7 +20,7 @@ namespace V275_REST_Lib;
 public class Label
 {
     public byte[] Image { get; set; }
-    public List<Job.Sector> Sectors { get; set; }
+    public List<JToken> Sectors { get; set; }
     public AvailableTables? Table { get; set; }
     public int Dpi { get; set; }
 
@@ -32,7 +32,7 @@ public class Label
     /// <param name="dpi">Must be set if using the simulator API.</param>
     /// <param name="sectors">If null, ignore. If empty, auto detect. If not empty, restore.</param>
     /// <param name="table"></param>
-    public Label(Action<Repeat> repeatAvailable, byte[] image, int dpi, List<Job.Sector> sectors, AvailableTables? table = null)
+    public Label(Action<Repeat> repeatAvailable, byte[] image, int dpi, List<JToken> sectors, AvailableTables? table = null)
     {
         RepeatAvailable = repeatAvailable;
         Table = table;
@@ -46,8 +46,7 @@ public class Label
 public class FullReport
 {
     public JObject? Report { get; set; }
-
-    public Job? Job { get; set; }
+    public JObject? Job { get; set; }
     public byte[]? Image { get; set; }
 }
 
@@ -859,7 +858,7 @@ public partial class Controller : ObservableObject
             }
 
         if (await UpdateJob())
-            report.Job = Job;
+            report.Job = JObject.Parse(JobJSON);
 
         return report;
     }
@@ -982,7 +981,7 @@ public partial class Controller : ObservableObject
         if ((report = await GetFullReport(repeat, getImage)) == null)
             return null;
 
-        if ((report.Job = (await Commands.GetJob()).Object as Job) == null)
+        if ((report.Job = JObject.Parse((await Commands.GetJob()).Json)) == null)
             return null;
 
         if (State == NodeStates.Paused)
@@ -1174,7 +1173,7 @@ public partial class Controller : ObservableObject
             return;
         }
     }
-    private async Task<RestoreSectorsResults> RetoreSectors(List<Job.Sector>? sectors)
+    private async Task<RestoreSectorsResults> RetoreSectors(List<JToken>? sectors)
     {
         if (sectors == null)
             return RestoreSectorsResults.Success;
@@ -1185,16 +1184,16 @@ public partial class Controller : ObservableObject
         if (sectors.Count == 0)
             return !await DetectSectors() ? RestoreSectorsResults.Failure : RestoreSectorsResults.Detect;
 
-        foreach (Job.Sector sec in sectors)
+        foreach (var sec in sectors)
         {
-            if (!await AddSector(sec.name, JsonConvert.SerializeObject(sec)))
+            if (!await AddSector(sec["name"].ToString(), JsonConvert.SerializeObject(sec)))
                 return RestoreSectorsResults.Failure;
 
-            if (sec.blemishMask?.layers != null)
-                foreach (Job.Layer layer in sec.blemishMask.layers)
+            if (sec["blemishMask"]?["layers"] != null)
+                foreach (var layer in sec["blemishMask"]["layers"])
 
-                    if (!await AddMask(sec.name, JsonConvert.SerializeObject(layer)))
-                        if (layer.value != 0)
+                    if (!await AddMask(sec["name"].ToString(), JsonConvert.SerializeObject(layer)))
+                        if (layer["value"].Value<int>() != 0)
                             return RestoreSectorsResults.Failure;
         }
 
@@ -1220,7 +1219,7 @@ public partial class Controller : ObservableObject
             return;
         }
 
-        repeat.FullReport.Job.jobVersion = Version;
+        repeat.FullReport.Job["jobVersion"] = Version;
 
         repeat.Label.RepeatAvailable?.Invoke(repeat);
     }
