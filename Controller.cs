@@ -1165,7 +1165,7 @@ public partial class Controller : ObservableObject
 
             foreach (Sector_New_Verify sec in sectors)
                 if (!await AddSector(sec.name, JsonConvert.SerializeObject(sec)))
-                    return;
+                    continue;
         }
 
         if (!await Inspect(repeat))
@@ -1248,7 +1248,7 @@ public partial class Controller : ObservableObject
 
                 Sector_New_Verify verify = new();
 
-                if (!string.IsNullOrEmpty(tableID))
+                if (tableID != "Unknown")
                 {
                     verify.gradingStandard.enabled = true;
                     verify.gradingStandard.tableId = tableID;
