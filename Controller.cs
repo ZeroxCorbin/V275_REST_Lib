@@ -53,17 +53,15 @@ public class FullReport
 
 public class Repeat
 {
-    public string Version { get; set; }
     public int Number { get; set; } = -1;
     public FullReport? FullReport { get; set; }
     public Label Label { get; set; }
     public Events_System? SetupDetectEvent { get; set; }
 
-    public Repeat(int number, Label label, string version)
+    public Repeat(int number, Label label)
     {
         Number = number;
         Label = label;
-        Version = version;
     }
 }
 
@@ -687,7 +685,7 @@ public partial class Controller : ObservableObject
         Logger.LogDebug($"LabelEnd: Controller State is? {State}: ActiveLabel is null? {ActiveLabel == null}: IsLoggedIn_Control? {IsLoggedIn_Control}: Event.Data is null? {ev.data == null}");
 
         if (ActiveLabel != null && IsLoggedIn_Control && ev.data! != null)
-            RepeatAvailableCallBack(new Repeat(ev.data.repeat, ActiveLabel, Version));
+            RepeatAvailableCallBack(new Repeat(ev.data.repeat, ActiveLabel));
 
         ActiveLabel = null;
     }
@@ -859,7 +857,10 @@ public partial class Controller : ObservableObject
             }
 
         if (await UpdateJob())
+        {
             report.Job = JObject.Parse(JobJSON);
+            report.Job["jobVersion"] = Version;
+        }
 
         return report;
     }
