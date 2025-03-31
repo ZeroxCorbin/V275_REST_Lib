@@ -16,54 +16,7 @@ using V275_REST_Lib.Enumerations;
 using V275_REST_Lib.Models;
 using Devices = V275_REST_Lib.Models.Devices;
 
-namespace V275_REST_Lib;
-
-public class Label
-{
-    public byte[] Image { get; set; }
-    public List<JToken> Sectors { get; set; }
-    public AvailableTables? Table { get; set; }
-    public int Dpi { get; set; }
-
-    public Action<Repeat> RepeatAvailable { get; set; }
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="image"></param>
-    /// <param name="dpi">Must be set if using the simulator API.</param>
-    /// <param name="sectors">If null, ignore. If empty, auto detect. If not empty, restore.</param>
-    /// <param name="table"></param>
-    public Label(Action<Repeat> repeatAvailable, byte[] image, int dpi, List<JToken> sectors, AvailableTables? table = null)
-    {
-        RepeatAvailable = repeatAvailable;
-        Table = table;
-        Dpi = dpi;
-        Image = image;
-        Sectors = sectors;
-    }
-    public Label() { }
-}
-
-public class FullReport
-{
-    public JObject? Report { get; set; }
-    public JObject? Job { get; set; }
-    public byte[]? Image { get; set; }
-}
-
-public class Repeat
-{
-    public int Number { get; set; } = -1;
-    public FullReport? FullReport { get; set; }
-    public Label Label { get; set; }
-    public Events_System? SetupDetectEvent { get; set; }
-
-    public Repeat(int number, Label label)
-    {
-        Number = number;
-        Label = label;
-    }
-}
+namespace V275_REST_Lib.Controllers;
 
 [JsonObject(MemberSerialization.OptIn)]
 public partial class Controller : ObservableObject
@@ -677,7 +630,7 @@ public partial class Controller : ObservableObject
             return;
 
         if (ActiveLabel != null && IsLoggedIn_Control && ev.data! != null)
-            ProcessLabel(ev.data.repeat, ActiveLabel, ev);
+            ProcessLearn(ev.data.repeat, ActiveLabel, ev);
     }
     private void WebSocket_LabelStart(Events_System ev) => LabelStart = true;
     private void WebSocket_LabelEnd(Models.Events_System ev)
@@ -747,7 +700,7 @@ public partial class Controller : ObservableObject
             return;
 
         if (ActiveLabel != null && IsLoggedIn_Control && ev.data! != null)
-            ProcessLabel(ev.data.repeat, ActiveLabel, null);
+            ProcessLabel(ev.data.repeat, ActiveLabel);
     }
 
     public async Task<Dictionary<(string symbol, string type), List<(string standard, string table)>>> CompileStandardTable()
@@ -814,7 +767,7 @@ public partial class Controller : ObservableObject
     }
     public async Task<bool> RemoveRepeat()
     {
-        int repeat = await GetLatestRepeatNumber();
+        var repeat = await GetLatestRepeatNumber();
         return repeat == -9999 || ((await Commands.RemoveRepeat(repeat)).OK && (await Commands.ResumeJob()).OK);
     }
 
@@ -838,7 +791,7 @@ public partial class Controller : ObservableObject
     }
 
     public async Task<FullReport> GetFullReport(int repeat, bool getImage)
-    {        
+    {
         if (repeat == 0)
             repeat = await GetLatestRepeatNumber();
 
@@ -866,13 +819,13 @@ public partial class Controller : ObservableObject
     }
     private byte[] AddDPIToBitmap(byte[] image, int dpi)
     {
-        int dpiXInMeters = Dpi2Dpm(dpi);
-        int dpiYInMeters = Dpi2Dpm(dpi);
+        var dpiXInMeters = Dpi2Dpm(dpi);
+        var dpiYInMeters = Dpi2Dpm(dpi);
         // Set the horizontal DPI
-        for (int i = 38; i < 42; i++)
+        for (var i = 38; i < 42; i++)
             image[i] = BitConverter.GetBytes(dpiXInMeters)[i - 38];
         // Set the vertical DPI
-        for (int i = 42; i < 46; i++)
+        for (var i = 42; i < 46; i++)
             image[i] = BitConverter.GetBytes(dpiYInMeters)[i - 42];
         return image;
     }
@@ -1003,14 +956,19 @@ public partial class Controller : ObservableObject
     }
     private Label? ActiveLabel { get; set; }
 
-    public bool ProcessLabel_Printer(Label label, int count, string printerName)
-    {
-        ActiveLabel = label;
+    public async Task<bool> ProcessLabel_Printer(Label label, int count, string printerName) => await Task.Run(() =>
+                                                                                                     {
+                                                                                                         if (label.Image == null)
+                                                                                                         {
+                                                                                                             Logger.LogError("Can not print a null image.");
+                                                                                                             return false;
+                                                                                                         }
+                                                                                                         ActiveLabel = label;
 
-        ProcessImage_Print(label.Image, count, printerName);
+                                                                                                         ProcessImage_Print(label.Image, count, printerName);
 
-        return true;
-    }
+                                                                                                         return true;
+                                                                                                     });
     public async Task<bool> ProcessLabel_Simulator(Label label)
     {
         ActiveLabel = label;
@@ -1076,8 +1034,8 @@ public partial class Controller : ObservableObject
     {
         try
         {
-            int verRes = 1;
-            string prepend = "";
+            var verRes = 1;
+            var prepend = "";
 
             Simulator.SimulatorFileHandler sim = new(SimulatorImageDirectory);
 
@@ -1086,7 +1044,7 @@ public partial class Controller : ObservableObject
 
                 if (System.Version.TryParse(Version, out Version ver))
                 {
-                    Version verMin = System.Version.Parse("1.1.0.3009");
+                    var verMin = System.Version.Parse("1.1.0.3009");
                     verRes = ver.CompareTo(ver);
 
                 }
@@ -1102,9 +1060,9 @@ public partial class Controller : ObservableObject
 
                     prepend = "_";
 
-                    foreach (string imgFile in sim.Images)
+                    foreach (var imgFile in sim.Images)
                     {
-                        string name = Path.GetFileName(imgFile);
+                        var name = Path.GetFileName(imgFile);
 
                         for (; ; )
                         {
@@ -1133,7 +1091,7 @@ public partial class Controller : ObservableObject
         }
     }
 
-    private async void ProcessLabel(int repeat, Label? label, Events_System? ev)
+    private async void ProcessLabel(int repeat, Label? label)
     {
         if (label == null)
         {
@@ -1141,33 +1099,20 @@ public partial class Controller : ObservableObject
             return;
         }
 
-        if (ev == null)
-        {
-            if (repeat == 0)
-                repeat = await GetLatestRepeatNumber();
+        if (repeat == 0)
+            repeat = await GetLatestRepeatNumber();
 
-            if (repeat > 0)
-                if (!(await Commands.SetRepeat(repeat)).OK)
-                {
-                    Logger.LogError("Error setting the repeat.");
-                    return;
-                }
-
-            RestoreSectorsResults res = await RetoreSectors(label.Sectors);
-
-            if (res != RestoreSectorsResults.Success)
+        if (repeat > 0)
+            if (!(await Commands.SetRepeat(repeat)).OK)
+            {
+                Logger.LogError("Error setting the repeat.");
                 return;
-        }
-        else
-        {
-            List<Sector_New_Verify> sectors = CreateSectors(ev, ActiveLabel.Table?.GetTableName(), Symbologies);
+            }
 
-            Logger.LogInfo("Creating sectors.");
+        RestoreSectorsResults res = await DetectRestoreSectors(label);
 
-            foreach (Sector_New_Verify sec in sectors)
-                if (!await AddSector(sec.name, JsonConvert.SerializeObject(sec)))
-                    continue;
-        }
+        if (res != RestoreSectorsResults.Success)
+            return;
 
         if (!await Inspect(repeat))
         {
@@ -1175,24 +1120,46 @@ public partial class Controller : ObservableObject
             return;
         }
     }
-    private async Task<RestoreSectorsResults> RetoreSectors(List<JToken>? sectors)
+    private async void ProcessLearn(int repeat, Label? label, Events_System ev)
     {
-        if (sectors == null)
-            return RestoreSectorsResults.Success;
+        if (label == null)
+        {
+            Logger.LogError("The label is null.");
+            return;
+        }
 
+        List<Sector_New_Verify> sectors = CreateSectors(ev, label.DesiredGS1Table.GetTableName(), Symbologies);
+
+        Logger.LogInfo("Creating sectors.");
+
+        foreach (Sector_New_Verify sec in sectors)
+            if (!await AddSector(sec.name, JsonConvert.SerializeObject(sec)))
+                continue;
+
+        if (!await Inspect(repeat))
+        {
+            Logger.LogError("Error inspecting the repeat.");
+            return;
+        }
+    }
+    private async Task<RestoreSectorsResults> DetectRestoreSectors(Label label)
+    {
         if (!await DeleteSectors())
             return RestoreSectorsResults.Failure;
 
-        if (sectors.Count == 0)
+        if (label.Handler is LabelHandlers.CameraDetect or LabelHandlers.SimulatorDetect)
             return !await DetectSectors() ? RestoreSectorsResults.Failure : RestoreSectorsResults.Detect;
 
-        foreach (var sec in sectors)
+        if (label.Sectors == null)
+            return RestoreSectorsResults.Success;
+
+        foreach (JToken sec in label.Sectors)
         {
             if (!await AddSector(sec["name"].ToString(), JsonConvert.SerializeObject(sec)))
                 return RestoreSectorsResults.Failure;
 
             if (sec["blemishMask"]?["layers"] != null)
-                foreach (var layer in sec["blemishMask"]["layers"])
+                foreach (JToken layer in sec["blemishMask"]["layers"])
 
                     if (!await AddMask(sec["name"].ToString(), JsonConvert.SerializeObject(layer)))
                         if (layer["value"].Value<int>() != 0)
