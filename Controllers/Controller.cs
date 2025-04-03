@@ -1257,4 +1257,18 @@ public partial class Controller : ObservableObject
 
         return true;
     }
+
+    public async Task<FullReport?> ReadTask(int repeat)
+    {
+        repeat = repeat == -1 ? await GetLatestRepeatNumber() : repeat;
+
+        FullReport report;
+        if ((report = await GetFullReport((int)repeat, true)) == null)
+        {
+            Logger.LogError("Unable to read the repeat report from the node.");
+            return report;
+        }
+
+        return report;
+    }
 }
