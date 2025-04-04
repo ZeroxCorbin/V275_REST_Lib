@@ -8,6 +8,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -630,7 +631,7 @@ public partial class Controller : ObservableObject
             return;
 
         if (ActiveLabel != null && IsLoggedIn_Control && ev.data! != null)
-            ProcessLearn(ev.data.repeat, ActiveLabel, ev);
+            ProcessLearn(ev.data.repeat, ActiveLabel.DesiredGS1Table.GetTableName(), ev);
     }
     private void WebSocket_LabelStart(Events_System ev) => LabelStart = true;
     private void WebSocket_LabelEnd(Models.Events_System ev)
@@ -1091,13 +1092,15 @@ public partial class Controller : ObservableObject
         }
     }
 
-    private async void ProcessLabel(int repeat, Label? label)
+    public async Task ProcessLabel(int repeat, Label? label)
     {
         if (label == null)
         {
             Logger.LogError("The label is null.");
             return;
         }
+
+        ActiveLabel = label;
 
         if (repeat == 0)
             repeat = await GetLatestRepeatNumber();
@@ -1120,15 +1123,9 @@ public partial class Controller : ObservableObject
             return;
         }
     }
-    private async void ProcessLearn(int repeat, Label? label, Events_System ev)
+    private async void ProcessLearn(int repeat, string gs1TableName, Events_System ev)
     {
-        if (label == null)
-        {
-            Logger.LogError("The label is null.");
-            return;
-        }
-
-        List<Sector_New_Verify> sectors = CreateSectors(ev, label.DesiredGS1Table.GetTableName(), Symbologies);
+        List<Sector_New_Verify> sectors = CreateSectors(ev, gs1TableName, Symbologies);
 
         Logger.LogInfo("Creating sectors.");
 
