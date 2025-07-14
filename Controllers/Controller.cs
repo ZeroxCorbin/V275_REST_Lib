@@ -8,7 +8,6 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.ComponentModel.Design;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -16,6 +15,7 @@ using System.Threading.Tasks;
 using V275_REST_Lib.Enumerations;
 using V275_REST_Lib.Models;
 using Devices = V275_REST_Lib.Models.Devices;
+using GradingStandards = V275_REST_Lib.Models.GradingStandards;
 
 namespace V275_REST_Lib.Controllers;
 
@@ -701,7 +701,7 @@ public partial class Controller : ObservableObject
             return;
 
         if (ActiveLabel != null && IsLoggedIn_Control && ev.data! != null)
-            ProcessLabel(ev.data.repeat, ActiveLabel);
+            _ = ProcessLabel(ev.data.repeat, ActiveLabel);
     }
 
     public async Task<Dictionary<(string symbol, string type), List<(string standard, string table)>>> CompileStandardTable()
@@ -1260,7 +1260,7 @@ public partial class Controller : ObservableObject
         repeat = repeat == -1 ? await GetLatestRepeatNumber() : repeat;
 
         FullReport report;
-        if ((report = await GetFullReport((int)repeat, true)) == null)
+        if ((report = await GetFullReport(repeat, true)) == null)
         {
             Logger.LogError("Unable to read the repeat report from the node.");
             return report;
