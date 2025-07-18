@@ -136,8 +136,8 @@ public partial class Controller : ObservableObject
     [ObservableProperty] private string configurationCameraJSON;
     [ObservableProperty] private bool isConfigurationCameraValid;
 
-    [ObservableProperty] private List<Symbologies.Symbol>? symbologies;
-    partial void OnSymbologiesChanging(List<Symbologies.Symbol>? value) => IsSymbologiesValid = value != null && value is List<Symbologies.Symbol>;
+    [ObservableProperty] private List<Models.Symbologies.Symbol>? symbologies;
+    partial void OnSymbologiesChanging(List<Models.Symbologies.Symbol>? value) => IsSymbologiesValid = value != null && value is List<Models.Symbologies.Symbol>;
     [ObservableProperty] private string symbologiesJSON;
     [ObservableProperty] private bool isSymbologiesValid;
 
@@ -303,17 +303,17 @@ public partial class Controller : ObservableObject
 
     private void ConvertStandards(Dictionary<(string symbol, string type), List<(string standard, string table)>> dict)
     {
-        Dictionary<AvailableSymbologies, List<AvailableTables>> standards = [];
+        Dictionary<BarcodeVerification.lib.Common.Symbologies, List<AvailableTables>> standards = [];
         foreach ((string symbol, string type) standard in dict.Keys)
         {
-            AvailableSymbologies data = standard.type.GetSymbology(AvailableDevices.V275);
+            BarcodeVerification.lib.Common.Symbologies data = standard.type.GetSymbology(BarcodeVerification.lib.Common.Devices.V275);
 
             if (!standards.ContainsKey(data))
                 standards.Add(data, []);
 
             foreach ((string standard, string table) table in dict[standard])
             {
-                AvailableTables tableData = table.table.GetTable(AvailableDevices.V275);
+                AvailableTables tableData = table.table.GetTable(BarcodeVerification.lib.Common.Devices.V275);
                 standards[data].Add(tableData);
             }
         }
@@ -493,7 +493,7 @@ public partial class Controller : ObservableObject
         if (!reset && (res = await Commands.GetSymbologies()).OK)
         {
             SymbologiesJSON = res.Json;
-            if (res.Object is List<Symbologies.Symbol> obj)
+            if (res.Object is List<Models.Symbologies.Symbol> obj)
                 Symbologies = obj;
         }
         else
@@ -1190,7 +1190,7 @@ public partial class Controller : ObservableObject
         repeat.Label.RepeatAvailable?.Invoke(repeat);
     }
 
-    public List<Sector_New_Verify> CreateSectors(Events_System ev, string tableID, List<Symbologies.Symbol> symbologies)
+    public List<Sector_New_Verify> CreateSectors(Events_System ev, string tableID, List<Models.Symbologies.Symbol> symbologies)
     {
         int d1 = 1, d2 = 1;
         List<Sector_New_Verify> lst = [];
@@ -1201,14 +1201,14 @@ public partial class Controller : ObservableObject
                 if (val.region == null || string.IsNullOrEmpty(val.symbology))
                     continue;
 
-                AvailableSymbologies sym = val.symbology.GetSymbology(AvailableDevices.V275);
+                BarcodeVerification.lib.Common.Symbologies sym = val.symbology.GetSymbology(BarcodeVerification.lib.Common.Devices.V275);
 
-                Symbologies.Symbol sym1 = symbologies.Find((e) => e.symbology == val.symbology);
+                Models.Symbologies.Symbol sym1 = symbologies.Find((e) => e.symbology == val.symbology);
 
                 if (sym1 == null)
                     continue;
 
-                if (sym.GetSymbologyRegionTypeName(AvailableDevices.V275) != sym1.regionType)
+                if (sym.GetSymbologyRegionTypeName(BarcodeVerification.lib.Common.Devices.V275) != sym1.regionType)
                     continue;
 
                 Sector_New_Verify verify = new();
@@ -1224,9 +1224,9 @@ public partial class Controller : ObservableObject
                     verify.gradingStandard.tableId = "1";
                 }
 
-                verify.id = sym.GetSymbologyRegionType(AvailableDevices.V275) is AvailableRegionTypes._1D or AvailableRegionTypes._2DStacked or AvailableRegionTypes.Postal ? d1++ : d2++;
+                verify.id = sym.GetSymbologyRegionType(BarcodeVerification.lib.Common.Devices.V275) is AvailableRegionTypes._1D or AvailableRegionTypes._2DStacked or AvailableRegionTypes.Postal ? d1++ : d2++;
 
-                verify.type = sym.GetSymbologyRegionTypeName(AvailableDevices.V275);
+                verify.type = sym.GetSymbologyRegionTypeName(BarcodeVerification.lib.Common.Devices.V275);
                 verify.symbology = val.symbology;
                 verify.name = $"{verify.type}_{verify.id}";
                 verify.username = $"{char.ToUpper(verify.name[0])}{verify.name[1..]}";
