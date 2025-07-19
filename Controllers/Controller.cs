@@ -313,7 +313,7 @@ public partial class Controller : ObservableObject
 
             foreach ((string standard, string table) table in dict[standard])
             {
-                GS1Tables tableData = table.table.GetTable(BarcodeVerification.lib.Common.Devices.V275);
+                GS1Tables tableData = table.table.GetGS1Table(BarcodeVerification.lib.Common.Devices.V275);
                 standards[data].Add(tableData);
             }
         }
@@ -1208,8 +1208,16 @@ public partial class Controller : ObservableObject
                 if (sym1 == null)
                     continue;
 
-                if (sym.GetSymbologyRegionTypeName(BarcodeVerification.lib.Common.Devices.V275) != sym1.regionType)
-                    continue;
+                if (sym.GetSymbologySpecificationType(BarcodeVerification.lib.Common.Devices.V275) == SymbologySpecificationTypes.D1)
+                {
+                    if (sym1.regionType != "verify1D")
+                        continue;
+                }
+                else
+                {
+                    if (sym1.regionType != "verify2D")
+                        continue;
+                }
 
                 Sector_New_Verify verify = new();
 
@@ -1224,9 +1232,8 @@ public partial class Controller : ObservableObject
                     verify.gradingStandard.tableId = "1";
                 }
 
-                verify.id = sym.GetSymbologyRegionType(BarcodeVerification.lib.Common.Devices.V275) is AvailableRegionTypes._1D or AvailableRegionTypes._2DStacked or AvailableRegionTypes.Postal ? d1++ : d2++;
-
-                verify.type = sym.GetSymbologyRegionTypeName(BarcodeVerification.lib.Common.Devices.V275);
+                verify.id = sym.GetSymbologySpecificationType(BarcodeVerification.lib.Common.Devices.V275) == SymbologySpecificationTypes.D1 ? d1++ : d2++;
+                verify.type = sym.GetSymbologySpecificationType(BarcodeVerification.lib.Common.Devices.V275) == SymbologySpecificationTypes.D1 ? "verify1D" : "verify2D";
                 verify.symbology = val.symbology;
                 verify.name = $"{verify.type}_{verify.id}";
                 verify.username = $"{char.ToUpper(verify.name[0])}{verify.name[1..]}";
