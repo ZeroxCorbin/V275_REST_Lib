@@ -30,7 +30,7 @@ public class Label
     }
     public List<JToken> Sectors { get;  }
     public LabelHandlers Handler { get; }
-    public AvailableTables DesiredGS1Table { get;}
+    public GS1Tables DesiredGS1Table { get;}
     public int Dpi { get; set; }
 
     public Action<Repeat> RepeatAvailable { get; }
@@ -41,7 +41,7 @@ public class Label
     /// <param name="dpi">Must be set if using the simulator API.</param>
     /// <param name="sectors">If null, ignore. If empty, auto detect. If not empty, restore.</param>
     /// <param name="table"></param>
-    public Label(Action<Repeat> repeatAvailable, List<JToken> sectors, LabelHandlers handler, AvailableTables desiredTable)
+    public Label(Action<Repeat> repeatAvailable, List<JToken> sectors, LabelHandlers handler, GS1Tables desiredTable)
     {
         RepeatAvailable = repeatAvailable;
         Handler = handler;

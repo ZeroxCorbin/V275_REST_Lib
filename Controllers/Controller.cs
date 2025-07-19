@@ -303,7 +303,7 @@ public partial class Controller : ObservableObject
 
     private void ConvertStandards(Dictionary<(string symbol, string type), List<(string standard, string table)>> dict)
     {
-        Dictionary<BarcodeVerification.lib.Common.Symbologies, List<AvailableTables>> standards = [];
+        Dictionary<BarcodeVerification.lib.Common.Symbologies, List<GS1Tables>> standards = [];
         foreach ((string symbol, string type) standard in dict.Keys)
         {
             BarcodeVerification.lib.Common.Symbologies data = standard.type.GetSymbology(BarcodeVerification.lib.Common.Devices.V275);
@@ -313,7 +313,7 @@ public partial class Controller : ObservableObject
 
             foreach ((string standard, string table) table in dict[standard])
             {
-                AvailableTables tableData = table.table.GetTable(BarcodeVerification.lib.Common.Devices.V275);
+                GS1Tables tableData = table.table.GetTable(BarcodeVerification.lib.Common.Devices.V275);
                 standards[data].Add(tableData);
             }
         }
