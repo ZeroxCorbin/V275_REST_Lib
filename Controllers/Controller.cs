@@ -1076,7 +1076,7 @@ public partial class Controller : ObservableObject
                 }
             }
 
-            if (!sim.SaveImage(prepend + "simulatorImage", ActiveLabel.Image))
+            if (!sim.SaveImage(prepend + "simulatorImage.bmp", ActiveLabel.Image))
             {
                 Logger.LogError("Could not copy the image to the simulator images directory.");
                 return false;
@@ -1112,10 +1112,13 @@ public partial class Controller : ObservableObject
                 return;
             }
 
-        RestoreSectorsResults res = await DetectRestoreSectors(label);
+        if(label.Handler is not LabelHandlers.CameraTrigger && label.Handler is not LabelHandlers.SimulatorTrigger)
+        {
+            RestoreSectorsResults res = await DetectRestoreSectors(label);
 
-        if (res != RestoreSectorsResults.Success)
-            return;
+            if (res != RestoreSectorsResults.Success)
+                return;
+        }
 
         if (!await Inspect(repeat))
         {
