@@ -20,7 +20,10 @@ public class Controller : IDisposable
         Data = data;
 
         if (pd != null)
+        {
+            pd.PrintPage -= PrintPage;
             pd.Dispose();
+        }
 
         pd = new PrintDocument();
         pd.PrintPage += PrintPage;
@@ -36,7 +39,10 @@ public class Controller : IDisposable
         Data = data;
 
         if (pd != null)
+        {
+            pd.PrintPage -= PrintPage;
             pd.Dispose();
+        }
 
         pd = new PrintDocument();
         pd.PrintPage += PrintPage;
@@ -61,6 +67,13 @@ public class Controller : IDisposable
 
         if (Count-- > 1)
             e.HasMorePages = true;
+        else
+        {
+            if (pd != null)
+            {
+                pd.PrintPage -= PrintPage;
+            }
+        }
     }
 
     protected virtual void Dispose(bool disposing)
@@ -69,7 +82,14 @@ public class Controller : IDisposable
         {
             if (disposing)
             {
-                pd.Dispose();
+                if (pd != null)
+                {
+                    pd.PrintPage -= PrintPage;
+                    pd.Dispose();
+                    pd = null;
+                }
+                Image = null;
+                Data = null;
             }
 
             // TODO: free unmanaged resources (unmanaged objects) and override finalizer
