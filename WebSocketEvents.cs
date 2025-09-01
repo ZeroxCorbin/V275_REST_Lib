@@ -17,11 +17,11 @@ namespace V275_REST_Lib
         public delegate void SocketStateDelegate(WebSocketState state, string msg = "");
         public event SocketStateDelegate? SocketState;
 
-        public delegate void MessageRecievedDelegate(string message);
-        public event MessageRecievedDelegate? MessageRecieved;
+        public delegate void MessageReceivedDelegate(string message);
+        public event MessageReceivedDelegate? MessageReceived;
 
-        public delegate void DataRecievedDelegate(byte[] data);
-        public event DataRecievedDelegate? DataRecieved;
+        public delegate void DataReceivedDelegate(byte[] data);
+        public event DataReceivedDelegate? DataReceived;
 
         public bool IsBinary { get; private set; }
 
@@ -85,7 +85,7 @@ namespace V275_REST_Lib
                 return;
             }
 
-            // whether we close the socket or time out, we cancel the token causing RecieveAsync to abort the socket
+            // whether we close the socket or time out, we cancel the token causing ReceiveAsync to abort the socket
             SocketLoopTokenSource?.Cancel();
 
             // close the socket first, because ReceiveAsync leaves an invalid socket (state = aborted) when the token is cancelled
@@ -109,7 +109,7 @@ namespace V275_REST_Lib
                 Logger.Error(ex, "WS Close Output Async Exception");
                 _ = Task.Run(() => SocketState?.Invoke(Socket == null ? WebSocketState.Closed : Socket.State));
             }
-            // whether we closed the socket or timed out, we cancel the token causing RecieveAsync to abort the socket
+            // whether we closed the socket or timed out, we cancel the token causing ReceiveAsync to abort the socket
             SocketLoopTokenSource?.Cancel();
         }
 
@@ -144,7 +144,7 @@ namespace V275_REST_Lib
 
                             if (receiveResult.EndOfMessage)
                             {
-                                await Task.Run(() => MessageRecieved?.Invoke(message));
+                                await Task.Run(() => MessageReceived?.Invoke(message));
                                 message = "";
                             }
                         }
@@ -154,7 +154,7 @@ namespace V275_REST_Lib
 
                             if (receiveResult.EndOfMessage)
                             {
-                                await Task.Run(() => DataRecieved?.Invoke(data));
+                                await Task.Run(() => DataReceived?.Invoke(data));
                                 data = [];
                             }
                         }

@@ -184,7 +184,7 @@ public partial class Controller : ObservableObject
         Password = password;
         SimulatorImageDirectory = dir;
 
-        WebSocket.MessageRecieved += WebSocketEvents_MessageRecieved;
+        WebSocket.MessageReceived += WebSocketEvents_MessageReceived;
     }
     public void Initialize() => Task.Run(async () =>
                                          {
@@ -552,7 +552,7 @@ public partial class Controller : ObservableObject
         return IsPrintValid;
     }
 
-    private void WebSocketEvents_MessageRecieved(string message)
+    private void WebSocketEvents_MessageReceived(string message)
     {
         string tmp;
         tmp = message.Remove(2, 15);
