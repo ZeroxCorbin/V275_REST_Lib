@@ -21,9 +21,9 @@ public class SimulatorFileHandler
 
         if (SimulatorImageDirectoryExists)
         {
-            foreach (string file in Directory.GetFiles(SimulatorImageDirectory))
+            foreach (var file in Directory.GetFiles(SimulatorImageDirectory))
             {
-                string ext = Path.GetExtension(file);
+                var ext = Path.GetExtension(file);
 
                 if (ext.Equals(".bmp") ||
                     ext.Equals(".png") ||
@@ -42,8 +42,8 @@ public class SimulatorFileHandler
         if (!HasImages)
             return true;
 
-        bool ok = true;
-        foreach (string file in Images)
+        var ok = true;
+        foreach (var file in Images)
         {
             try
             {

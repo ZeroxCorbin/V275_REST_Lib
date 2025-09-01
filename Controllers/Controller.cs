@@ -304,16 +304,16 @@ public partial class Controller : ObservableObject
     private void ConvertStandards(Dictionary<(string symbol, string type), List<(string standard, string table)>> dict)
     {
         Dictionary<BarcodeVerification.lib.Common.Symbologies, List<GS1Tables>> standards = [];
-        foreach ((string symbol, string type) standard in dict.Keys)
+        foreach (var standard in dict.Keys)
         {
-            BarcodeVerification.lib.Common.Symbologies data = standard.type.GetSymbology(BarcodeVerification.lib.Common.Devices.V275);
+            var data = standard.type.GetSymbology(BarcodeVerification.lib.Common.Devices.V275);
 
             if (!standards.ContainsKey(data))
                 standards.Add(data, []);
 
-            foreach ((string standard, string table) table in dict[standard])
+            foreach (var table in dict[standard])
             {
-                GS1Tables tableData = table.table.GetGS1Table(BarcodeVerification.lib.Common.Devices.V275);
+                var tableData = table.table.GetGS1Table(BarcodeVerification.lib.Common.Devices.V275);
                 standards[data].Add(tableData);
             }
         }
@@ -453,7 +453,7 @@ public partial class Controller : ObservableObject
                 Job = obj;
 
             if (IsJobValid)
-                foreach (Job.Sector sector in Job.sectors)
+                foreach (var sector in Job.sectors)
                 {
                     if (sector.type == "blemish")
                     {
@@ -558,7 +558,7 @@ public partial class Controller : ObservableObject
         tmp = message.Remove(2, 15);
         tmp = tmp.Remove(tmp.LastIndexOf('}'), 1);
 
-        Events_System ev = JsonConvert.DeserializeObject<Events_System>(tmp) ?? new Events_System();
+        var ev = JsonConvert.DeserializeObject<Events_System>(tmp) ?? new Events_System();
         if (ev.source == null)
             return;
 
@@ -645,7 +645,7 @@ public partial class Controller : ObservableObject
     }
     private void WebSocket_Heartbeat(Events_System? ev)
     {
-        NodeStates state = GetState(ev.data.state);
+        var state = GetState(ev.data.state);
 
         Dpi = ev != null ? (int)ev.data.Current_dpi : 0;
 
@@ -708,11 +708,11 @@ public partial class Controller : ObservableObject
     {
         Dictionary<(string symbol, string type), List<(string standard, string table)>> dict = [];
 
-        Results res = await Commands.GetGradingStandards();
+        var res = await Commands.GetGradingStandards();
         if (!res.OK)
             return dict;
 
-        foreach (GradingStandards.GradingStandard gs in ((GradingStandards)res.Object).gradingStandards)
+        foreach (var gs in ((GradingStandards)res.Object).gradingStandards)
         {
 
             if (!dict.ContainsKey((gs.symbology, gs.symbolType)))
@@ -796,7 +796,7 @@ public partial class Controller : ObservableObject
         if (repeat == 0)
             repeat = await GetLatestRepeatNumber();
 
-        Results? res = State == NodeStates.Editing ? await Commands.GetReport() : await Commands.GetReport(repeat);
+        var res = State == NodeStates.Editing ? await Commands.GetReport() : await Commands.GetReport(repeat);
 
         FullReport report = new();
         if (res == null || !res.OK)
@@ -838,7 +838,7 @@ public partial class Controller : ObservableObject
         if (!await UpdateJob())
             return false;
 
-        foreach (Job.Sector sec in Job.sectors)
+        foreach (var sec in Job.sectors)
             if (!(await Commands.DeleteSector(sec.name)).OK)
                 return false;
         return true;
@@ -861,7 +861,7 @@ public partial class Controller : ObservableObject
 
         await Task.Run(() =>
         {
-            DateTime start = DateTime.Now;
+            var start = DateTime.Now;
             while (State != NodeStates.Editing)
                 if ((DateTime.Now - start) > TimeSpan.FromMilliseconds(10000))
                     return;
@@ -880,7 +880,7 @@ public partial class Controller : ObservableObject
         if (string.IsNullOrEmpty(JobName))
             return false;
 
-        Results rr = await Commands.GetIsRunReady();
+        var rr = await Commands.GetIsRunReady();
         if (!rr.OK)
             return false;
         if ((string?)rr.Object != "OK")
@@ -894,7 +894,7 @@ public partial class Controller : ObservableObject
 
         await Task.Run(() =>
         {
-            DateTime start = DateTime.Now;
+            var start = DateTime.Now;
             while (State != NodeStates.Running)
                 if ((DateTime.Now - start) > TimeSpan.FromMilliseconds(30000))
                     return;
@@ -912,7 +912,7 @@ public partial class Controller : ObservableObject
 
         await Task.Run(() =>
         {
-            DateTime start = DateTime.Now;
+            var start = DateTime.Now;
             while (!LabelStart)
                 if ((DateTime.Now - start) > TimeSpan.FromMilliseconds(10000))
                     return;
@@ -925,7 +925,7 @@ public partial class Controller : ObservableObject
     {
         if (repeat == 0)
         {
-            List<int>? res = State == NodeStates.Running ? (await Commands.GetRepeatsAvailableRun()).Object as List<int> : (await Commands.GetRepeatsAvailable()).Object as List<int>;
+            var res = State == NodeStates.Running ? (await Commands.GetRepeatsAvailableRun()).Object as List<int> : (await Commands.GetRepeatsAvailable()).Object as List<int>;
             repeat = res == null ? 0 : res.Count > 0 ? res.First() : 0;
         }
 
@@ -952,7 +952,7 @@ public partial class Controller : ObservableObject
     }
     public async Task<int> GetLatestRepeatNumber()
     {
-        List<int>? res = State == NodeStates.Running ? (await Commands.GetRepeatsAvailableRun()).Object as List<int> : (await Commands.GetRepeatsAvailable()).Object as List<int>;
+        var res = State == NodeStates.Running ? (await Commands.GetRepeatsAvailableRun()).Object as List<int> : (await Commands.GetRepeatsAvailable()).Object as List<int>;
         return res == null ? 0 : res.Count > 0 ? res.First() : 0;
     }
     private Label? ActiveLabel { get; set; }
@@ -1043,7 +1043,7 @@ public partial class Controller : ObservableObject
             if (!sim.DeleteAllImages())
             {
 
-                if (System.Version.TryParse(Version, out Version ver))
+                if (System.Version.TryParse(Version, out var ver))
                 {
                     var verMin = System.Version.Parse("1.1.0.3009");
                     verRes = ver.CompareTo(ver);
@@ -1114,7 +1114,7 @@ public partial class Controller : ObservableObject
 
         if(label.Handler is not LabelHandlers.CameraTrigger && label.Handler is not LabelHandlers.SimulatorTrigger)
         {
-            RestoreSectorsResults res = await DetectRestoreSectors(label);
+            var res = await DetectRestoreSectors(label);
 
             if (res != RestoreSectorsResults.Success)
                 return;
@@ -1128,11 +1128,11 @@ public partial class Controller : ObservableObject
     }
     private async void ProcessLearn(int repeat, string gs1TableName, Events_System ev)
     {
-        List<Sector_New_Verify> sectors = CreateSectors(ev, gs1TableName, Symbologies);
+        var sectors = CreateSectors(ev, gs1TableName, Symbologies);
 
         Logger.LogInfo("Creating sectors.");
 
-        foreach (Sector_New_Verify sec in sectors)
+        foreach (var sec in sectors)
             if (!await AddSector(sec.name, JsonConvert.SerializeObject(sec)))
                 continue;
 
@@ -1153,13 +1153,13 @@ public partial class Controller : ObservableObject
         if (label.Sectors == null)
             return RestoreSectorsResults.Success;
 
-        foreach (JToken sec in label.Sectors)
+        foreach (var sec in label.Sectors)
         {
             if (!await AddSector(sec["name"].ToString(), JsonConvert.SerializeObject(sec)))
                 return RestoreSectorsResults.Failure;
 
             if (sec["blemishMask"]?["layers"] != null)
-                foreach (JToken layer in sec["blemishMask"]["layers"])
+                foreach (var layer in sec["blemishMask"]["layers"])
 
                     if (!await AddMask(sec["name"].ToString(), JsonConvert.SerializeObject(layer)))
                         if (layer["value"].Value<int>() != 0)
@@ -1199,14 +1199,14 @@ public partial class Controller : ObservableObject
         List<Sector_New_Verify> lst = [];
 
         if (ev?.data != null && ev.data.detections != null)
-            foreach (Events_System.Detection val in ev.data.detections)
+            foreach (var val in ev.data.detections)
             {
                 if (val.region == null || string.IsNullOrEmpty(val.symbology))
                     continue;
 
-                BarcodeVerification.lib.Common.Symbologies sym = val.symbology.GetSymbology(BarcodeVerification.lib.Common.Devices.V275);
+                var sym = val.symbology.GetSymbology(BarcodeVerification.lib.Common.Devices.V275);
 
-                Models.Symbologies.Symbol sym1 = symbologies.Find((e) => e.symbology == val.symbology);
+                var sym1 = symbologies.Find((e) => e.symbology == val.symbology);
 
                 if (sym1 == null)
                     continue;

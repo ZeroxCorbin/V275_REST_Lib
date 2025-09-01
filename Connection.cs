@@ -39,7 +39,7 @@ public partial class Connection : ObservableObject
 
     public async Task<string> Get_Token(string url, string user, string pass, int timeoutS = -1)
     {
-        TimeSpan timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
+        var timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
 
         Logger.LogDebug($"GET TOKEN: {url}");
 
@@ -50,10 +50,10 @@ public partial class Connection : ObservableObject
             using HttpClient client = new();
             client.BaseAddress = new System.Uri(url);
             client.Timeout = timeout;
-            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(UTF8Encoding.UTF8.GetBytes($"{user}:{pass}")));
+            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{user}:{pass}")));
             client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
 
-            HttpContent content = new StringContent("", UTF8Encoding.UTF8, "*/*");
+            HttpContent content = new StringContent("", Encoding.UTF8, "*/*");
             HttpResponseMessage = await client.PutAsync(url, content);
 
             return HttpResponseMessage.IsSuccessStatusCode ? HttpResponseMessage.Headers.GetValues("Authorization").FirstOrDefault() : null;
@@ -66,7 +66,7 @@ public partial class Connection : ObservableObject
     }
     public async Task<bool> Post(string url, string data, string token, int timeoutS = -1)
     {
-        TimeSpan timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
+        var timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
 
         Logger.LogDebug($"POST: {url}");
 
@@ -81,7 +81,7 @@ public partial class Connection : ObservableObject
                 _ = client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", token);
             client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
 
-            HttpContent content = new StringContent(data, UTF8Encoding.UTF8, "*/*");
+            HttpContent content = new StringContent(data, Encoding.UTF8, "*/*");
             HttpResponseMessage = await client.PostAsync(url, content);
 
             return HttpResponseMessage.IsSuccessStatusCode;
@@ -94,7 +94,7 @@ public partial class Connection : ObservableObject
     }
     public async Task<bool> Put(string url, string data, string token, int timeoutS = -1)
     {
-        TimeSpan timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
+        var timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
 
         Logger.LogDebug($"PUT: {url}");
 
@@ -127,7 +127,7 @@ public partial class Connection : ObservableObject
     }
     public async Task<bool> Put(string url, byte[] data, string token, int timeoutS = -1)
     {
-        TimeSpan timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
+        var timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
 
         Logger.LogDebug($"PUT: {url}");
 
@@ -155,7 +155,7 @@ public partial class Connection : ObservableObject
     }
     public async Task<bool> Patch(string url, string data, string token, int timeoutS = -1)
     {
-        TimeSpan timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
+        var timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
 
         Logger.LogDebug($"PATCH: {url}");
 
@@ -168,7 +168,7 @@ public partial class Connection : ObservableObject
                 _ = client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", token);
             client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
 
-            HttpContent content = new StringContent(data, UTF8Encoding.UTF8, "*/*");
+            HttpContent content = new StringContent(data, Encoding.UTF8, "*/*");
             HttpRequestMessage request = new(new HttpMethod("PATCH"), url)
             { Content = content };
 
@@ -184,7 +184,7 @@ public partial class Connection : ObservableObject
     }
     public async Task<bool> Delete(string url, string token, int timeoutS = -1)
     {
-        TimeSpan timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
+        var timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
 
         Logger.LogDebug($"DELETE: {url}");
 
@@ -211,7 +211,7 @@ public partial class Connection : ObservableObject
     }
     public async Task<string> Get(string url, string token, int timeoutS = -1)
     {
-        TimeSpan timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
+        var timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
 
         Logger.LogDebug($"GET: {url}");
 
@@ -238,7 +238,7 @@ public partial class Connection : ObservableObject
     }
     public async Task<byte[]> GetBytes(string url, string token, int timeoutS = -1)
     {
-        TimeSpan timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
+        var timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
 
         Logger.LogDebug($"GET: {url}");
 
@@ -265,7 +265,7 @@ public partial class Connection : ObservableObject
     }
     public async Task<Stream> Stream(string url, string token, int timeoutS = -1)
     {
-        TimeSpan timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
+        var timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
 
         Logger.LogDebug($"STREAM: {url}");
 

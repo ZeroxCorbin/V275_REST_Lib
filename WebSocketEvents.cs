@@ -89,7 +89,7 @@ namespace V275_REST_Lib
             SocketLoopTokenSource?.Cancel();
 
             // close the socket first, because ReceiveAsync leaves an invalid socket (state = aborted) when the token is cancelled
-            CancellationTokenSource timeout = new CancellationTokenSource(10000);
+            var timeout = new CancellationTokenSource(10000);
             try
             {
                 // after this, the socket state will change to CloseSent
@@ -118,14 +118,14 @@ namespace V275_REST_Lib
             if (SocketLoopTokenSource == null || Socket == null)
                 return;
 
-            CancellationToken cancellationToken = SocketLoopTokenSource.Token;
-            string message = "";
+            var cancellationToken = SocketLoopTokenSource.Token;
+            var message = "";
             byte[] data = [];
 
-            ArraySegment<byte> buffer = WebSocket.CreateClientBuffer(4096, 4096);
+            var buffer = WebSocket.CreateClientBuffer(4096, 4096);
             while (Socket.State != WebSocketState.Closed && !cancellationToken.IsCancellationRequested)
             {
-                WebSocketReceiveResult receiveResult = await Socket.ReceiveAsync(buffer, cancellationToken);
+                var receiveResult = await Socket.ReceiveAsync(buffer, cancellationToken);
                 // if the token is cancelled while ReceiveAsync is blocking, the socket state changes to aborted and it can't be used
                 if (!cancellationToken.IsCancellationRequested)
                 {
