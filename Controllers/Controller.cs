@@ -196,28 +196,28 @@ public partial class Controller : ObservableObject
     {
         if (IsLoggedIn)
         {
-            Logger.LogDebug($"Logging out. {Username} @ {Host}:{SystemPort}");
+            Logger.Debug($"Logging out. {Username} @ {Host}:{SystemPort}");
             await Logout();
             return;
         }
 
         if (!PreLogin())
         {
-            Logger.LogDebug($"Pre-Log in FAILED. {Username} @ {Host}:{SystemPort}");
+            Logger.Debug($"Pre-Log in FAILED. {Username} @ {Host}:{SystemPort}");
             return;
         }
 
-        Logger.LogDebug($"Logging in. {Username} @ {Host}:{SystemPort}");
+        Logger.Debug($"Logging in. {Username} @ {Host}:{SystemPort}");
 
         if ((await Commands.Login(Username, Password, monitor)).OK)
         {
-            Logger.LogDebug($"Logged in. {(monitor ? "Monitor" : "Control")} {Username} @ {Host}:{SystemPort}");
+            Logger.Debug($"Logged in. {(monitor ? "Monitor" : "Control")} {Username} @ {Host}:{SystemPort}");
 
             PostLogin(monitor);
         }
         else
         {
-            Logger.LogError($"Login FAILED. {Username} @ {Host}:{SystemPort}");
+            Logger.Error($"Login FAILED. {Username} @ {Host}:{SystemPort}");
 
             IsLoggedIn_Control = false;
             IsLoggedIn_Monitor = false;
@@ -236,14 +236,14 @@ public partial class Controller : ObservableObject
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError(ex);
+                    Logger.Error(ex);
                     return false;
                 }
                 return true;
             }
             else
             {
-                Logger.LogError($"Invalid Simulation Images Directory: '{SimulatorImageDirectory}'");
+                Logger.Error($"Invalid Simulation Images Directory: '{SimulatorImageDirectory}'");
                 return false;
             }
         }
@@ -460,7 +460,7 @@ public partial class Controller : ObservableObject
                         if ((await Commands.GetMask(sector.name)).Object is Job.Mask mask)
                             sector.blemishMask = mask;
                         else
-                            Logger.LogWarning($"Failed to get mask for sector {sector.name}");
+                            Logger.Warning($"Failed to get mask for sector {sector.name}");
                     }
                 }
         }
@@ -572,47 +572,47 @@ public partial class Controller : ObservableObject
                 WebSocket_Heartbeat(ev);
                 break;
             case "setupCapture":
-                Logger.LogDebug($"WSE: setupCapture {ev.source}; {ev.name}");
+                Logger.Debug($"WSE: setupCapture {ev.source}; {ev.name}");
                 WebSocket_SetupCapture(ev);
                 break;
             case "setupDetectBegin":
-                Logger.LogDebug($"WSE: setupDetectBegin {ev.source}; {ev.name}");
+                Logger.Debug($"WSE: setupDetectBegin {ev.source}; {ev.name}");
                 //WebSocket_SetupDetect(ev, false);
                 break;
             case "setupDetectStart":
-                Logger.LogDebug($"WSE: setupDetectStart {ev.source}; {ev.name}");
+                Logger.Debug($"WSE: setupDetectStart {ev.source}; {ev.name}");
                 break;
             case "setupDetect":
-                Logger.LogDebug($"WSE: setupDetect {ev.source}; {ev.name}");
+                Logger.Debug($"WSE: setupDetect {ev.source}; {ev.name}");
                 break;
             case "setupDetectEnd":
-                Logger.LogDebug($"WSE: setupDetectEnd {ev.source}; {ev.name}");
+                Logger.Debug($"WSE: setupDetectEnd {ev.source}; {ev.name}");
                 WebSocket_SetupDetectEnd(ev);
                 break;
             case "stateChange":
-                Logger.LogDebug($"WSE: stateChange : {ev.source}; {ev.name}");
+                Logger.Debug($"WSE: stateChange : {ev.source}; {ev.name}");
                 WebSocket_StateChange(ev);
                 break;
             case "sessionStateChange":
-                Logger.LogDebug($"WSE: sessionStateChange {ev.source}; {ev.name}");
+                Logger.Debug($"WSE: sessionStateChange {ev.source}; {ev.name}");
                 WebSocket_SessionStateChange(ev);
                 break;
             case "labelBegin":
-                Logger.LogDebug($"WSE: labelBegin {ev.source}; {ev.name}");
+                Logger.Debug($"WSE: labelBegin {ev.source}; {ev.name}");
                 WebSocket_LabelStart(ev);
                 break;
             case "labelEnd":
-                Logger.LogDebug($"WSE: labelEnd {ev.source}; {ev.name}");
+                Logger.Debug($"WSE: labelEnd {ev.source}; {ev.name}");
                 WebSocket_LabelEnd(ev);
                 break;
             case "sectorBegin":
-                Logger.LogDebug($"WSE: sectorBegin {ev.source}; {ev.name}");
+                Logger.Debug($"WSE: sectorBegin {ev.source}; {ev.name}");
                 break;
             case "sectorEnd":
-                Logger.LogDebug($"WSE: sectorEnd {ev.source}; {ev.name}");
+                Logger.Debug($"WSE: sectorEnd {ev.source}; {ev.name}");
                 break;
             default:
-                Logger.LogWarning($"Unknown event type: {ev.name}");
+                Logger.Warning($"Unknown event type: {ev.name}");
                 break;
         }
     }
@@ -625,7 +625,7 @@ public partial class Controller : ObservableObject
     /// <param name="end"></param>
     private void WebSocket_SetupDetectEnd(Models.Events_System ev)
     {
-        Logger.LogDebug($"SetupDetect: Controller State is? {State}: ActiveLabel is null? {ActiveLabel == null}: IsLoggedIn_Control? {IsLoggedIn_Control}: Event.Data is null? {ev.data == null}");
+        Logger.Debug($"SetupDetect: Controller State is? {State}: ActiveLabel is null? {ActiveLabel == null}: IsLoggedIn_Control? {IsLoggedIn_Control}: Event.Data is null? {ev.data == null}");
 
         if (State != NodeStates.Editing)
             return;
@@ -636,7 +636,7 @@ public partial class Controller : ObservableObject
     private void WebSocket_LabelStart(Events_System ev) => LabelStart = true;
     private void WebSocket_LabelEnd(Models.Events_System ev)
     {
-        Logger.LogDebug($"LabelEnd: Controller State is? {State}: ActiveLabel is null? {ActiveLabel == null}: IsLoggedIn_Control? {IsLoggedIn_Control}: Event.Data is null? {ev.data == null}");
+        Logger.Debug($"LabelEnd: Controller State is? {State}: ActiveLabel is null? {ActiveLabel == null}: IsLoggedIn_Control? {IsLoggedIn_Control}: Event.Data is null? {ev.data == null}");
 
         if (ActiveLabel != null && IsLoggedIn_Control && ev.data! != null)
             RepeatAvailableCallBack(new Repeat(ev.data.repeat, ActiveLabel));
@@ -695,7 +695,7 @@ public partial class Controller : ObservableObject
     /// <param name="ev"></param>
     private void WebSocket_SetupCapture(Events_System ev)
     {
-        Logger.LogDebug($"SetupCapture: Controller State is? {State}: ActiveLabel is null? {ActiveLabel == null}: IsLoggedIn_Control? {IsLoggedIn_Control}: Event.Data is null? {ev.data == null}");
+        Logger.Debug($"SetupCapture: Controller State is? {State}: ActiveLabel is null? {ActiveLabel == null}: IsLoggedIn_Control? {IsLoggedIn_Control}: Event.Data is null? {ev.data == null}");
 
         if (State != NodeStates.Editing)
             return;
@@ -961,7 +961,7 @@ public partial class Controller : ObservableObject
                                                                                                      {
                                                                                                          if (label.Image == null)
                                                                                                          {
-                                                                                                             Logger.LogError("Can not print a null image.");
+                                                                                                             Logger.Error("Can not print a null image.");
                                                                                                              return false;
                                                                                                          }
                                                                                                          ActiveLabel = label;
@@ -985,7 +985,7 @@ public partial class Controller : ObservableObject
             {
                 if (!(await Commands.SimulationTrigger()).OK)
                 {
-                    Logger.LogError("Error triggering the simulator.");
+                    Logger.Error("Error triggering the simulator.");
                     return false;
                 }
             }
@@ -993,7 +993,7 @@ public partial class Controller : ObservableObject
             {
                 if (!await SimulatorTogglePrint())
                 {
-                    Logger.LogError("Error triggering the simulator.");
+                    Logger.Error("Error triggering the simulator.");
                     return false;
                 }
             }
@@ -1014,7 +1014,7 @@ public partial class Controller : ObservableObject
     {
         if (ActiveLabel == null)
         {
-            Logger.LogError($"The image is null.");
+            Logger.Error($"The image is null.");
             return false;
         }
 
@@ -1025,7 +1025,7 @@ public partial class Controller : ObservableObject
                 dpi = (uint)ActiveLabel.Dpi
             })).OK)
         {
-            Logger.LogError("Error triggering the simulator.");
+            Logger.Error("Error triggering the simulator.");
             return false;
         }
 
@@ -1052,7 +1052,7 @@ public partial class Controller : ObservableObject
 
                 if (verRes > 0)
                 {
-                    Logger.LogError("Could not delete all simulator images. The version is less than 1.1.0.3009 which does not allow the first image to be deleted.");
+                    Logger.Error("Could not delete all simulator images. The version is less than 1.1.0.3009 which does not allow the first image to be deleted.");
                     return false;
                 }
                 else
@@ -1078,7 +1078,7 @@ public partial class Controller : ObservableObject
 
             if (!sim.SaveImage(prepend + "simulatorImage.bmp", ActiveLabel.Image))
             {
-                Logger.LogError("Could not copy the image to the simulator images directory.");
+                Logger.Error("Could not copy the image to the simulator images directory.");
                 return false;
             }
 
@@ -1087,7 +1087,7 @@ public partial class Controller : ObservableObject
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex.Message);
+            Logger.Error(ex.Message);
             return false;
         }
     }
@@ -1096,7 +1096,7 @@ public partial class Controller : ObservableObject
     {
         if (label == null)
         {
-            Logger.LogError("The label is null.");
+            Logger.Error("The label is null.");
             return;
         }
 
@@ -1108,7 +1108,7 @@ public partial class Controller : ObservableObject
         if (repeat > 0)
             if (!(await Commands.SetRepeat(repeat)).OK)
             {
-                Logger.LogError("Error setting the repeat.");
+                Logger.Error("Error setting the repeat.");
                 return;
             }
 
@@ -1122,7 +1122,7 @@ public partial class Controller : ObservableObject
 
         if (!await Inspect(repeat))
         {
-            Logger.LogError("Error inspecting the repeat.");
+            Logger.Error("Error inspecting the repeat.");
             return;
         }
     }
@@ -1130,7 +1130,7 @@ public partial class Controller : ObservableObject
     {
         var sectors = CreateSectors(ev, gs1TableName, Symbologies);
 
-        Logger.LogInfo("Creating sectors.");
+        Logger.Info("Creating sectors.");
 
         foreach (var sec in sectors)
             if (!await AddSector(sec.name, JsonConvert.SerializeObject(sec)))
@@ -1138,7 +1138,7 @@ public partial class Controller : ObservableObject
 
         if (!await Inspect(repeat))
         {
-            Logger.LogError("Error inspecting the repeat.");
+            Logger.Error("Error inspecting the repeat.");
             return;
         }
     }
@@ -1172,19 +1172,19 @@ public partial class Controller : ObservableObject
     {
         if (repeat == null)
         {
-            Logger.LogError("The repeat is null.");
+            Logger.Error("The repeat is null.");
             return;
         }
 
         repeat.FullReport = await GetFullReport(repeat.Number, true);
         if (repeat.FullReport == null)
         {
-            Logger.LogError("Unable to read the repeat report from the node.");
+            Logger.Error("Unable to read the repeat report from the node.");
             return;
         }
         if (repeat.FullReport.Job == null)
         {
-            Logger.LogError("The job is null.");
+            Logger.Error("The job is null.");
             return;
         }
 
@@ -1258,7 +1258,7 @@ public partial class Controller : ObservableObject
     {
         if ((repeat.FullReport = await GetFullReport(repeat.Number, true)) == null)
         {
-            Logger.LogError("Unable to read the repeat report from the node.");
+            Logger.Error("Unable to read the repeat report from the node.");
             return false;
         }
 
@@ -1272,7 +1272,7 @@ public partial class Controller : ObservableObject
         FullReport report;
         if ((report = await GetFullReport(repeat, true)) == null)
         {
-            Logger.LogError("Unable to read the repeat report from the node.");
+            Logger.Error("Unable to read the repeat report from the node.");
             return report;
         }
 

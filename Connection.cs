@@ -21,7 +21,7 @@ public partial class Connection : ObservableObject
         if (value != null)
         {
             IsException = true;
-            Logger.LogError(value);
+            Logger.Error(value);
         }
         else
             IsException = false;
@@ -41,7 +41,7 @@ public partial class Connection : ObservableObject
     {
         var timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
 
-        Logger.LogDebug($"GET TOKEN: {url}");
+        Logger.Debug($"GET TOKEN: {url}");
 
         Reset();
 
@@ -68,7 +68,7 @@ public partial class Connection : ObservableObject
     {
         var timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
 
-        Logger.LogDebug($"POST: {url}");
+        Logger.Debug($"POST: {url}");
 
         Reset();
 
@@ -96,7 +96,7 @@ public partial class Connection : ObservableObject
     {
         var timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
 
-        Logger.LogDebug($"PUT: {url}");
+        Logger.Debug($"PUT: {url}");
 
         Reset();
 
@@ -129,7 +129,7 @@ public partial class Connection : ObservableObject
     {
         var timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
 
-        Logger.LogDebug($"PUT: {url}");
+        Logger.Debug($"PUT: {url}");
 
         Reset();
 
@@ -157,7 +157,7 @@ public partial class Connection : ObservableObject
     {
         var timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
 
-        Logger.LogDebug($"PATCH: {url}");
+        Logger.Debug($"PATCH: {url}");
 
         try
         {
@@ -186,7 +186,7 @@ public partial class Connection : ObservableObject
     {
         var timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
 
-        Logger.LogDebug($"DELETE: {url}");
+        Logger.Debug($"DELETE: {url}");
 
         Reset();
 
@@ -213,7 +213,7 @@ public partial class Connection : ObservableObject
     {
         var timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
 
-        Logger.LogDebug($"GET: {url}");
+        Logger.Debug($"GET: {url}");
 
         Reset();
 
@@ -240,7 +240,7 @@ public partial class Connection : ObservableObject
     {
         var timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
 
-        Logger.LogDebug($"GET: {url}");
+        Logger.Debug($"GET: {url}");
 
         Reset();
 
@@ -267,7 +267,7 @@ public partial class Connection : ObservableObject
     {
         var timeout = timeoutS > 0 ? TimeSpan.FromSeconds(timeoutS) : _baseTimeout;
 
-        Logger.LogDebug($"STREAM: {url}");
+        Logger.Debug($"STREAM: {url}");
 
         Reset();
 

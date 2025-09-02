@@ -16,7 +16,7 @@ namespace V275_REST_Lib.LocalDatabases
         public RunLogDatabase(string dbFilePath) => Open(dbFilePath);
         public RunLogDatabase Open(string dbFilePath)
         {
-            Logger.LogInfo($"Opening Database: {dbFilePath}");
+            Logger.Info($"Opening Database: {dbFilePath}");
 
             if (string.IsNullOrEmpty(dbFilePath))
                 return null;
@@ -31,7 +31,7 @@ namespace V275_REST_Lib.LocalDatabases
             }
             catch (Exception e)
             {
-                Logger.LogError(e);
+                Logger.Error(e);
                 return null;
             }
         }

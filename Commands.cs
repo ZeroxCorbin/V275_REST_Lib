@@ -118,12 +118,12 @@ public class Commands
         if (Connection.IsException)
         {
             if (Connection.Exception != null)
-                Logger.LogError(Connection.Exception);
+                Logger.Error(Connection.Exception);
             return false;
         }
         else if (Connection.HttpResponseMessage != null && !Connection.HttpResponseMessage.IsSuccessStatusCode)
         {
-            Logger.LogWarning($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
+            Logger.Warning($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
             return false;
         }
         return true;
@@ -146,13 +146,13 @@ public class Commands
         if (Connection.IsException)
         {
             if (Connection.Exception != null)
-                Logger.LogError(Connection.Exception);
+                Logger.Error(Connection.Exception);
             results.Object = json;
             return results;
         }
         else if (Connection.HttpResponseMessage != null && !Connection.HttpResponseMessage.IsSuccessStatusCode)
         {
-            Logger.LogError($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
+            Logger.Error($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
             results.Object = json;
             return results;
         }
@@ -169,7 +169,7 @@ public class Commands
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex);
+            Logger.Error(ex);
             results.Object = null;
         }
 
@@ -194,15 +194,15 @@ public class Commands
         if (Connection.IsException)
         {
             if (Connection.Exception != null)
-                Logger.LogError(Connection.Exception);
+                Logger.Error(Connection.Exception);
             else
-                Logger.LogError("Unknown Connection Exception");
+                Logger.Error("Unknown Connection Exception");
 
             return results;
         }
         else if (Connection.HttpResponseMessage != null && !Connection.HttpResponseMessage.IsSuccessStatusCode)
         {
-            Logger.LogWarning($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
+            Logger.Warning($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
             return results;
         }
 
@@ -228,12 +228,12 @@ public class Commands
         if (Connection.IsException)
         {
             if (Connection.Exception != null)
-                Logger.LogError(Connection.Exception);
+                Logger.Error(Connection.Exception);
             return results;
         }
         else if (Connection.HttpResponseMessage != null && !Connection.HttpResponseMessage.IsSuccessStatusCode)
         {
-            Logger.LogWarning($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
+            Logger.Warning($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
             return results;
         }
 
@@ -259,12 +259,12 @@ public class Commands
         if (Connection.IsException)
         {
             if (Connection.Exception != null)
-                Logger.LogError(Connection.Exception);
+                Logger.Error(Connection.Exception);
             return results;
         }
         else if (Connection.HttpResponseMessage != null && !Connection.HttpResponseMessage.IsSuccessStatusCode)
         {
-            Logger.LogWarning($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
+            Logger.Warning($"{Connection.HttpResponseMessage.StatusCode}: {Connection.HttpResponseMessage.ReasonPhrase}");
             return results;
         }
 
